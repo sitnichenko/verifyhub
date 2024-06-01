@@ -45,16 +45,76 @@ function loadProjects() {
 }
 
 function addProject() {
-    const name = prompt('Введите название проекта:');
-    const description = prompt('Введите описание проекта:');
-    if (name && description) {
-        const projects = JSON.parse(localStorage.getItem('projects')) || [];
-        projects.push({ name, description, tests: [] });
-        localStorage.setItem('projects', JSON.stringify(projects));
-        loadProjects();
-        showPage('projects');
-    }
+    const modal = document.getElementById('add-project-modal');
+    modal.style.display = 'block';
+
+    const saveButton = document.getElementById('save-project-button');
+    saveButton.onclick = function() {
+        const nameInput = document.getElementById('project-name-input').value;
+        const descriptionInput = document.getElementById('project-description-input').value;
+        const nameError = document.getElementById('project-name-error');
+        const descriptionError = document.getElementById('project-description-error');
+
+        let isValid = true;
+
+        // Проверяем поле ввода имени проекта
+        if (!nameInput) {
+            nameError.textContent = 'Пожалуйста, введите название проекта.';
+            nameError.style.display = 'block';
+            isValid = false;
+        } else {
+            nameError.style.display = 'none';
+        }
+
+        // Если все поля заполнены, сохраняем проект
+        if (isValid) {
+            const projects = JSON.parse(localStorage.getItem('projects')) || [];
+            projects.push({ name: nameInput, description: descriptionInput, tests: [] });
+            localStorage.setItem('projects', JSON.stringify(projects));
+            loadProjects();
+            showPage('projects');
+            modal.style.display = 'none';
+            document.getElementById('project-name-input').value = '';
+        }
+    };
+
+    // Обработчик события для кнопки "Отмена" в модальном окне
+    const cancelButton = document.getElementById('cancel-project-button');
+    cancelButton.onclick = function() {
+        modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
+        // Очищаем текст ошибок
+        document.getElementById('project-name-error').textContent = '';
+        document.getElementById('project-description-error').textContent = '';
+    };
+
+    // Обработчик события для кнопки закрытия модального окна (крестик)
+    const closeButton = document.getElementById('close-project-button');
+    closeButton.onclick = function() {
+        modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
+        // Очищаем текст ошибок
+        document.getElementById('project-name-error').textContent = '';
+        document.getElementById('project-description-error').textContent = '';
+    };
+
+    // Обработчик события для клика вне модального окна (закрывает окно)
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
+            // Очищаем текст ошибок
+            document.getElementById('project-name-error').textContent = '';
+            document.getElementById('project-description-error').textContent = '';
+        }
+    };
+    // Очищаем текст в полях модального окна
+    document.getElementById('project-name-input').value = '';
+    document.getElementById('project-description-input').value = '';
+    // Очищаем сообщение об ошибке
+    document.getElementById('error-message').textContent = '';
+    // Очищаем текст в поле описания проекта
+    document.getElementById('project-description-input').value = '';
+    
 }
+
 
 function editProject(index) {
     const projects = JSON.parse(localStorage.getItem('projects'));

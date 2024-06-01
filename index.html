@@ -8,7 +8,7 @@
 </head>
 <body>
     <!-- Navbar -->
-    <div class="navbar">
+    <div class="navbar" id="navbar">
         <div>
             <a href="#" onclick="showPage('dashboard')">Дашборд</a>
             <a href="#" onclick="showPage('projects')">Проекты</a>
@@ -16,9 +16,33 @@
             <a href="#" onclick="showPage('archive')">Архив</a>
         </div>
         <div>
+            <div id="refresh-container"> 
             <button onclick="refreshPage()">Обновить</button>
         </div>
     </div>
+</div>
+
+<!-- Модальное окно для добавления проекта -->
+<div id="add-project-modal" class="modal">
+    <div class="modal-content">
+        <span id="close-project-button" class="close">&times;</span>
+        <h2>Добавить проект</h2>
+        <div>
+            <input type="text" id="project-name-input" name="project-name" placeholder="Введите название проекта">
+            <div id="project-name-error" class="error-message"></div> <!-- Поле для отображения ошибки -->
+            <div id="error-message"></div>
+        </div>
+        <div>
+            <textarea id="project-description-input" name="project-description" rows="4" placeholder="Введите описание проекта"></textarea>
+            <div id="project-description-error" class="error-message"></div> <!-- Поле для отображения ошибки -->
+            <div id="error-message"></div>
+        </div>
+        <div class="modal-buttons">
+            <button type="button" id="save-project-button">Сохранить</button>
+            <button type="button" id="cancel-project-button">Отмена</button>
+        </div>
+    </div>
+</div>
 
     <!-- Container -->
     <div class="container">
