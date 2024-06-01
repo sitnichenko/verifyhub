@@ -199,7 +199,7 @@ body {
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
-    font-size: 1em; /* Увеличиваем размер текста */
+    font-size: 0.9em; /* Увеличиваем размер текста */
 }
 /* Дополнительные стили для текстовой области, чтобы сделать ее высоту такой же, как у текстового поля */
 .modal-content textarea {

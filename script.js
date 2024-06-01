@@ -110,8 +110,6 @@ function addProject() {
     document.getElementById('project-description-input').value = '';
     // Очищаем сообщение об ошибке
     document.getElementById('error-message').textContent = '';
-    // Очищаем текст в поле описания проекта
-    document.getElementById('project-description-input').value = '';
     
 }
 
