@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Verify Hub</h1>
+        <div>
+            <label for="username">Логин:</label>
+            <input type="text" id="username" name="username">
+        </div>
+        <div>
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password">
+        </div>
+        <button onclick="login()">Войти</button>
+        <p id="login-error" class="error-message"></p>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
