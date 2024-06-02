@@ -1,14 +1,16 @@
 body {
     font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
 .navbar {
     position: fixed;
     top: 0;
     width: 100%;
-    background-color: rgba(178, 180, 180, 0.952); /* полупрозрачный белый цвет */
-    z-index: 1000; /* чтобы Navbar был поверх остального контента */
-    transition: background-color 0.3s ease; /* плавное изменение цвета при прокрутке */
+    background-color: rgba(178, 180, 180, 0.952);
+    z-index: 1000;
+    transition: background-color 0.3s ease;
 }
 
 .navbar a {
@@ -18,23 +20,22 @@ body {
     text-align: center;
     padding: 14px 20px;
     text-decoration: none;
-    transition: color 0.3s ease; /* плавное изменение цвета текста при наведении */
+    transition: color 0.3s ease;
 }
 
 .navbar a:hover {
-    color: #007bff; /* синий цвет при наведении */
+    color: #007bff;
 }
 
 .content {
-    margin-top: px; /* чтобы контент не перекрывался Navbar */
+    margin-top: 60px; /* отступ сверху равен высоте навбара */
+    padding: 20px; /* дополнительный отступ для контента */
 }
 
 #refresh-container {
-    float: right; /* Правый край */
+    float: right;
     padding: 14px 20px;
-
 }
-
 
 .container {
     padding: 2em;
@@ -70,12 +71,11 @@ body {
 }
 
 .buttons {
-    margin-top: 1em;
+    margin-bottom: 1em; /* отступ снизу, чтобы кнопки не прилипали к карточкам */
 }
 
 .buttons button {
-    margin-right: 1em;
-        padding: 10px 20px;
+    padding: 10px 20px;
     margin: 0 10px;
     border: none;
     border-radius: 5px;
@@ -116,9 +116,8 @@ body {
     background-color: #3e8e41;
 }
 
-/* Стили для модального окна */
 .modal {
-    display: none; /* По умолчанию модальное окно скрыто */
+    display: none;
     position: fixed;
     z-index: 1;
     left: 0;
@@ -126,17 +125,16 @@ body {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.4); /* Черный полупрозрачный фон */
+    background-color: rgba(0,0,0,0.4);
 }
 
-/* Стили для заголовка модального окна */
 .modal-content h2 {
-    text-align: left; /* Выравнивание по левой стороне */
+    text-align: left;
     margin: 0;
     margin-bottom: 10px;
-    width: calc(100% - 40px); /* 100% ширины минус отступы */
-    margin: 20px 20px; /* Отступы вокруг полей ввода */
-    padding: 0px; /* Внутренний отступ */
+    width: calc(100% - 40px);
+    margin: 20px 20px;
+    padding: 0px;
 }
 
 .modal-content {
@@ -177,66 +175,61 @@ body {
     flex-direction: column;
 }
 
-/* Общий стиль для всех полей ввода в модальном окне */
 #project-name-input,
 #project-description-input {
-    width: calc(100% - 40px); /* 100% ширины минус отступы */
-    margin: 10px 20px; /* Отступы вокруг полей ввода */
-    padding: 10px; /* Внутренний отступ */
-    border: 1px solid #ccc; /* Граница поля */
-    border-radius: 5px; /* Закругление углов */
-    resize: none; /* Отключение изменения размера для textarea */
-    box-sizing: border-box; /* Учитываем границы и отступы внутри ширины элемента */
-    display: block; /* Растягиваем поля ввода на всю ширину родительского контейнера */
+    width: calc(100% - 40px);
+    margin: 10px 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none;
+    box-sizing: border-box;
+    display: block;
 }
-/* Стили для полей ввода в модальном окне */
+
 .modal-content input[type="text"],
 .modal-content textarea {
-    width: 100%; /* Растягиваем на всю ширину */
-    padding: 12px; /* Внутренний отступ */
-    margin: 8px 0; /* Отступы сверху и снизу */
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
     display: inline-block;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
-    font-size: 0.9em; /* Увеличиваем размер текста */
-}
-/* Дополнительные стили для текстовой области, чтобы сделать ее высоту такой же, как у текстового поля */
-.modal-content textarea {
-    font-size: 1.1em; /* Увеличиваем размер текста */
+    font-size: 0.9em;
 }
 
-/* Стили для кнопок в модальном окне */
+.modal-content textarea {
+    font-size: 1.1em;
+}
+
 .modal-buttons button {
-    width: calc(100% - 40px); /* 50% ширины окна минус отступы */
-    margin: 20px 20px; /* Отступы между кнопками */
-    padding: 10px; /* Внутренний отступ */
-    border: none; /* Убираем границу */
-    border-radius: 5px; /* Закругляем углы */
-    cursor: pointer; /* Изменяем курсор при наведении */
-    transition: background-color 0.3s; /* Плавное изменение цвета фона */
-    display: block; /* Растягиваем кнопки на всю ширину родительского контейнера */
-    box-sizing: border-box; /* Учитываем границы и отступы внутри ширины элемента */
+    width: calc(100% - 40px);
+    margin: 20px 20px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: block;
+    box-sizing: border-box;
 }
 
 .modal-buttons {
-    display: flex; /* Располагаем элементы в строку */
-    justify-content: flex-end; /* Выравниваем элементы по правому краю */
-    margin-top: 10px; /* Отступ сверху */
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
 }
 
-
-/* Стили для кнопок при наведении */
 .modal-buttons button:hover {
-    background-color: hsl(0, 0%, 67%);; /* Цвет фона при наведении */
+    background-color: hsl(0, 0%, 67%);
 }
 
-/* Стили для сообщений об ошибках */
 .error-message {
-    width: calc(100% - 40px); /* 50% ширины окна минус отступы */
-    margin: 20px 20px; /* Отступы между кнопками */
+    width: calc(100% - 40px);
+    margin: 20px 20px;
     color: red;
     font-size: 0.9em;
     margin-top: 5px;
-    display: none; /* Изначально скрываем сообщение */
+    display: none;
 }

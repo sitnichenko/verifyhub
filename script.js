@@ -5,18 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
     showPage('dashboard');
 });
 
-function showPage(page) {
-    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-    document.getElementById(page).classList.remove('hidden');
-    if (page === 'projects') {
-        loadProjects();
-    }
-    if (page === 'runs') {
-        loadRuns();
-    }
-    if (page === 'archive') {
-        loadArchiveRuns();
-    }
+function showPage(pageId) {
+    const pages = document.querySelectorAll('.page');
+    pages.forEach(page => {
+        page.style.display = 'none';
+    });
+    document.getElementById(pageId).style.display = 'block';
 }
 
 function refreshPage() {
@@ -24,24 +18,28 @@ function refreshPage() {
     location.reload();
 }
 
-
-
 function loadProjects() {
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
     const projectList = document.getElementById('project-list');
     projectList.innerHTML = '';
     projects.forEach((project, index) => {
-        const projectCard = document.createElement('div');
-        projectCard.className = 'project-card';
-        projectCard.innerHTML = `
-            <h2>${project.name}</h2>
-            <p>${project.description}</p>
-            <button onclick="viewProject(${index})">Открыть</button>
-            <button onclick="editProject(${index})">Редактировать</button>
-            <button onclick="deleteProject(${index})">Удалить</button>
-        `;
+        const projectCard = createProjectCard(project, index);
         projectList.appendChild(projectCard);
     });
+}
+
+function createProjectCard(project, index) {
+    const projectCard = document.createElement('div');
+    projectCard.className = 'project-card';
+    projectCard.innerHTML = `
+        <h2>${project.name}</h2>
+        <p>${project.description}</p>
+        <p>Платформы: ${project.platforms.length > 0 ? project.platforms.join(', ') : 'Не выбраны'}</p>
+        <button onclick="viewProject(${index})">Открыть</button>
+        <button onclick="editProject(${index})">Редактировать</button>
+        <button onclick="deleteProject(${index})">Удалить</button>
+    `;
+    return projectCard;
 }
 
 function addProject() {
@@ -52,6 +50,7 @@ function addProject() {
     saveButton.onclick = function() {
         const nameInput = document.getElementById('project-name-input').value;
         const descriptionInput = document.getElementById('project-description-input').value;
+        const platforms = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
         const nameError = document.getElementById('project-name-error');
         const descriptionError = document.getElementById('project-description-error');
 
@@ -69,12 +68,13 @@ function addProject() {
         // Если все поля заполнены, сохраняем проект
         if (isValid) {
             const projects = JSON.parse(localStorage.getItem('projects')) || [];
-            projects.push({ name: nameInput, description: descriptionInput, tests: [] });
+            projects.push({ name: nameInput, description: descriptionInput, platforms: platforms, tests: [] });
             localStorage.setItem('projects', JSON.stringify(projects));
             loadProjects();
             showPage('projects');
             modal.style.display = 'none';
             document.getElementById('project-name-input').value = '';
+            document.getElementById('project-description-input').value = '';
         }
     };
 
@@ -105,13 +105,27 @@ function addProject() {
             document.getElementById('project-description-error').textContent = '';
         }
     };
-    // Очищаем текст в полях модального окна
-    document.getElementById('project-name-input').value = '';
-    document.getElementById('project-description-input').value = '';
-    // Очищаем сообщение об ошибке
-    document.getElementById('error-message').textContent = '';
-    
 }
+
+function loadProjects() {
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const projectList = document.getElementById('project-list');
+    projectList.innerHTML = '';
+    projects.forEach((project, index) => {
+        const projectCard = document.createElement('div');
+        projectCard.className = 'project-card';
+        projectCard.innerHTML = `
+            <h2>${project.name}</h2>
+            <p>${project.description}</p>
+            <p>Платформы: ${project.platforms.length > 0 ? project.platforms.join(', ') : 'Не выбраны'}</p>
+            <button onclick="viewProject(${index})">Открыть</button>
+            <button onclick="editProject(${index})">Редактировать</button>
+            <button onclick="deleteProject(${index})">Удалить</button>
+        `;
+        projectList.appendChild(projectCard);
+    });
+}
+
 
 
 function editProject(index) {
@@ -139,6 +153,8 @@ function viewProject(index) {
     const project = projects[index];
     document.getElementById('project-name').textContent = project.name;
     document.getElementById('project-description').textContent = project.description;
+    document.getElementById('project-platform').textContent = project.platforms.length > 0 ? project.platforms.join(', ') : 'Платформы не выбраны';
+    
     loadTests();
     showPage('project-detail');
 }
@@ -157,6 +173,7 @@ function loadTests() {
             <p>Платформа: ${test.platform}</p>
             <button onclick="editTest(${testIndex})">Редактировать</button>
             <button onclick="deleteTest(${testIndex})">Удалить</button>
+            
         `;
         testList.appendChild(testCard);
     });
