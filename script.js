@@ -13,6 +13,7 @@ function showPage(pageId) {
     document.getElementById(pageId).style.display = 'block';
 }
 
+
 function refreshPage() {
     localStorage.clear();
     location.reload();
