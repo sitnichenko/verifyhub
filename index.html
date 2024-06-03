@@ -87,6 +87,30 @@
         </div>
     </div>
 
+    <!-- Модальное окно для редактирования проекта -->
+<div id="edit-project-modal" class="modal">
+    <div class="modal-content">
+        <span id="close-edit-project-button" class="close">&times;</span>
+        <h2>Редактировать проект</h2>
+        <div>
+            <input type="text" id="edit-project-name-input" placeholder="Введите название проекта">
+            <span id="edit-project-name-error" class="error-message"></span>
+        </div>
+        <div>
+            <textarea id="edit-project-description-input" placeholder="Введите описание проекта"></textarea>
+            <span id="edit-project-description-error" class="error-message"></span>
+        </div>
+        <div>
+            <p>Платформы:</p>
+            <label><input type="checkbox" id="edit-project-web-checkbox" value="web"> Web</label>
+            <label><input type="checkbox" id="edit-project-android-checkbox" value="android"> Android</label>
+            <label><input type="checkbox" id="edit-project-ios-checkbox" value="ios"> iOS</label>
+        </div>
+        <button class="custom-button" id="save-edit-project-button">Сохранить</button>
+        <button class="custom-button" id="cancel-edit-project-button">Отмена</button>
+    </div>
+</div>
+
     <script src="script.js"></script>
 </body>
 </html>

@@ -130,15 +130,71 @@ function loadProjects() {
 
 function editProject(index) {
     const projects = JSON.parse(localStorage.getItem('projects'));
-    const name = prompt('Введите название проекта:', projects[index].name);
-    const description = prompt('Введите описание проекта:', projects[index].description);
-    if (name && description) {
-        projects[index].name = name;
-        projects[index].description = description;
-        localStorage.setItem('projects', JSON.stringify(projects));
-        loadProjects();
-    }
+    const project = projects[index];
+
+    // Заполнение полей модального окна данными текущего проекта
+    document.getElementById('edit-project-name-input').value = project.name;
+    document.getElementById('edit-project-description-input').value = project.description;
+    document.getElementById('edit-project-web-checkbox').checked = project.platforms.includes('web');
+    document.getElementById('edit-project-android-checkbox').checked = project.platforms.includes('android');
+    document.getElementById('edit-project-ios-checkbox').checked = project.platforms.includes('ios');
+
+    const editModal = document.getElementById('edit-project-modal');
+    editModal.style.display = 'block';
+
+    const saveButton = document.getElementById('save-edit-project-button');
+    saveButton.onclick = function() {
+        const nameInput = document.getElementById('edit-project-name-input').value;
+        const descriptionInput = document.getElementById('edit-project-description-input').value;
+        const webCheckbox = document.getElementById('edit-project-web-checkbox').checked;
+        const androidCheckbox = document.getElementById('edit-project-android-checkbox').checked;
+        const iosCheckbox = document.getElementById('edit-project-ios-checkbox').checked;
+
+        const platforms = [];
+        if (webCheckbox) platforms.push('web');
+        if (androidCheckbox) platforms.push('android');
+        if (iosCheckbox) platforms.push('ios');
+
+        const nameError = document.getElementById('edit-project-name-error');
+        const descriptionError = document.getElementById('edit-project-description-error');
+
+        let isValid = true;
+
+        if (!nameInput) {
+            nameError.textContent = 'Пожалуйста, введите название проекта.';
+            nameError.style.display = 'block';
+            isValid = false;
+        } else {
+            nameError.style.display = 'none';
+        }
+
+        if (isValid) {
+            projects[index].name = nameInput;
+            projects[index].description = descriptionInput;
+            projects[index].platforms = platforms;
+            localStorage.setItem('projects', JSON.stringify(projects));
+            loadProjects();
+            editModal.style.display = 'none';
+        }
+    };
+
+    const cancelButton = document.getElementById('cancel-edit-project-button');
+    cancelButton.onclick = function() {
+        editModal.style.display = 'none';
+    };
+
+    const closeButton = document.getElementById('close-edit-project-button');
+    closeButton.onclick = function() {
+        editModal.style.display = 'none';
+    };
+
+    window.onclick = function(event) {
+        if (event.target === editModal) {
+            editModal.style.display = 'none';
+        }
+    };
 }
+
 
 function deleteProject(index) {
     const projects = JSON.parse(localStorage.getItem('projects'));
@@ -153,7 +209,10 @@ function viewProject(index) {
     const project = projects[index];
     document.getElementById('project-name').textContent = project.name;
     document.getElementById('project-description').textContent = project.description;
-    document.getElementById('project-platform').textContent = project.platforms.length > 0 ? project.platforms.join(', ') : 'Платформы не выбраны';
+    
+    // Формируем строку с платформами
+    const platformText = project.platforms.length > 0 ? `Платформы: ${project.platforms.join(', ')}` : 'Платформы не выбраны';
+    document.getElementById('project-platform').textContent = platformText;
     
     loadTests();
     showPage('project-detail');
