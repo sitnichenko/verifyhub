@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Navbar -->
-    <div class="navbar" id="navbar">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
         <div>
             <a href="#" onclick="showPage('dashboard')">Дашборд</a>
             <a href="#" onclick="showPage('projects')">Проекты</a>
@@ -16,7 +16,7 @@
             <a href="#" onclick="showPage('archive')">Архив</a>
         </div>
         <div id="refresh-container"> 
-            <button onclick="refreshPage()">Обновить</button>
+            <button class="custom-button" onclick="refreshPage()">Обновить</button>
         </div>
     </div>
 
@@ -30,7 +30,7 @@
         <div id="projects" class="page hidden">
             <h1>Список проектов</h1>
             <div class="buttons">
-                <button onclick="addProject()">Добавить проект</button>
+                <button class="custom-button" onclick="addProject()">Добавить проект</button>
             </div>
             <div id="project-list"></div>
         </div>
@@ -40,8 +40,8 @@
             <p id="project-description"></p>
             <p id="project-platform"></p>
             <div id="test-list"></div>
-            <button onclick="addTest()">Добавить тест</button>
-            <button onclick="showPage('projects')">Назад к проектам</button>
+            <button class="custom-button" onclick="addTest()">Добавить тест</button>
+            <button class="custom-button" onclick="showPage('projects')">Назад к проектам</button>
         </div>
 
         <div id="add-project" class="page hidden">
@@ -52,7 +52,7 @@
         <div id="runs" class="page hidden">
             <h1>Прогоны</h1>
             <div class="buttons">
-                <button onclick="addRun()">Создать прогон</button>
+                <button class="custom-button" onclick="addRun()">Создать прогон</button>
             </div>
             <div id="run-list"></div>
         </div>
@@ -82,8 +82,8 @@
                 <label><input type="checkbox" value="android"> Android</label>
                 <label><input type="checkbox" value="ios"> iOS</label>
             </div>
-            <button id="save-project-button">Сохранить</button>
-            <button id="cancel-project-button">Отмена</button>
+            <button class="custom-button" id="save-project-button">Сохранить</button>
+            <button class="custom-button" id="cancel-project-button">Отмена</button>
         </div>
     </div>
 
