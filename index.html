@@ -111,6 +111,51 @@
     </div>
 </div>
 
+<!-- Модальное окно для добавления теста -->
+<div id="add-test-modal" class="modal">
+    <div class="modal-content">
+        <span id="close-add-test-button" class="close">&times;</span>
+        <h2>Добавить тест</h2>
+        <div>
+            <input type="text" id="test-name-input" placeholder="Введите название теста">
+            <span id="test-name-error" class="error-message"></span>
+        </div>
+        <div>
+            <textarea id="test-description-input" placeholder="Введите описание теста"></textarea>
+            <span id="test-description-error" class="error-message"></span>
+        </div>
+        <div>
+            <input type="text" id="test-platform-input" placeholder="Введите платформу теста">
+            <span id="test-platform-error" class="error-message"></span>
+        </div>
+        <button class="custom-button" id="save-test-button">Сохранить</button>
+        <button class="custom-button" id="cancel-test-button">Отмена</button>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования теста -->
+<div id="edit-test-modal" class="modal">
+    <div class="modal-content">
+        <span id="close-edit-test-button" class="close">&times;</span>
+        <h2>Редактировать тест</h2>
+        <div>
+            <input type="text" id="edit-test-name-input" placeholder="Введите название теста">
+            <span id="edit-test-name-error" class="error-message"></span>
+        </div>
+        <div>
+            <textarea id="edit-test-description-input" placeholder="Введите описание теста"></textarea>
+            <span id="edit-test-description-error" class="error-message"></span>
+        </div>
+        <div>
+            <input type="text" id="edit-test-platform-input" placeholder="Введите платформу теста">
+            <span id="edit-test-platform-error" class="error-message"></span>
+        </div>
+        <button class="custom-button" id="save-edit-test-button">Сохранить</button>
+        <button class="custom-button" id="cancel-edit-test-button">Отмена</button>
+    </div>
+</div>
+
+
     <script src="script.js"></script>
 </body>
 </html>

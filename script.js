@@ -240,31 +240,169 @@ function loadTests() {
 }
 
 function addTest() {
-    const name = prompt('Введите название теста:');
-    const description = prompt('Введите описание теста:');
-    const platform = prompt('Введите платформу теста:');
-    if (name && description && platform) {
-        const projects = JSON.parse(localStorage.getItem('projects'));
-        projects[currentProjectIndex].tests.push({ name, description, platform, status: 'unchecked' });
-        localStorage.setItem('projects', JSON.stringify(projects));
-        loadTests();
-    }
+    const modal = document.getElementById('add-test-modal');
+    modal.style.display = 'block';
+
+    const saveButton = document.getElementById('save-test-button');
+    saveButton.onclick = function() {
+        const nameInput = document.getElementById('test-name-input').value;
+        const descriptionInput = document.getElementById('test-description-input').value;
+        const platformInput = document.getElementById('test-platform-input').value;
+
+        const nameError = document.getElementById('test-name-error');
+        const descriptionError = document.getElementById('test-description-error');
+        const platformError = document.getElementById('test-platform-error');
+
+        let isValid = true;
+
+        if (!nameInput) {
+            nameError.textContent = 'Пожалуйста, введите название теста.';
+            nameError.style.display = 'block';
+            isValid = false;
+        } else {
+            nameError.style.display = 'none';
+        }
+
+        if (!descriptionInput) {
+            descriptionError.textContent = 'Пожалуйста, введите описание теста.';
+            descriptionError.style.display = 'block';
+            isValid = false;
+        } else {
+            descriptionError.style.display = 'none';
+        }
+
+        if (!platformInput) {
+            platformError.textContent = 'Пожалуйста, введите платформу теста.';
+            platformError.style.display = 'block';
+            isValid = false;
+        } else {
+            platformError.style.display = 'none';
+        }
+
+        if (isValid) {
+            const projects = JSON.parse(localStorage.getItem('projects'));
+            projects[currentProjectIndex].tests.push({ name: nameInput, description: descriptionInput, platform: platformInput, status: 'unchecked' });
+            localStorage.setItem('projects', JSON.stringify(projects));
+            loadTests();
+            modal.style.display = 'none';
+        }
+    };
+
+    const cancelButton = document.getElementById('cancel-test-button');
+    cancelButton.onclick = function() {
+        modal.style.display = 'none';
+        clearTestModalFields();
+    };
+
+    const closeButton = document.getElementById('close-add-test-button');
+    closeButton.onclick = function() {
+        modal.style.display = 'none';
+        clearTestModalFields();
+    };
+
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            clearTestModalFields();
+        }
+    };
 }
 
 function editTest(testIndex) {
     const projects = JSON.parse(localStorage.getItem('projects'));
     const test = projects[currentProjectIndex].tests[testIndex];
-    const name = prompt('Введите название теста:', test.name);
-    const description = prompt('Введите описание теста:', test.description);
-    const platform = prompt('Введите платформу теста:', test.platform);
-    if (name && description && platform) {
-        test.name = name;
-        test.description = description;
-        test.platform = platform;
-        localStorage.setItem('projects', JSON.stringify(projects));
-        loadTests();
-    }
+
+    document.getElementById('edit-test-name-input').value = test.name;
+    document.getElementById('edit-test-description-input').value = test.description;
+    document.getElementById('edit-test-platform-input').value = test.platform;
+
+    const modal = document.getElementById('edit-test-modal');
+    modal.style.display = 'block';
+
+    const saveButton = document.getElementById('save-edit-test-button');
+    saveButton.onclick = function() {
+        const nameInput = document.getElementById('edit-test-name-input').value;
+        const descriptionInput = document.getElementById('edit-test-description-input').value;
+        const platformInput = document.getElementById('edit-test-platform-input').value;
+
+        const nameError = document.getElementById('edit-test-name-error');
+        const descriptionError = document.getElementById('edit-test-description-error');
+        const platformError = document.getElementById('edit-test-platform-error');
+
+        let isValid = true;
+
+        if (!nameInput) {
+            nameError.textContent = 'Пожалуйста, введите название теста.';
+            nameError.style.display = 'block';
+            isValid = false;
+        } else {
+            nameError.style.display = 'none';
+        }
+
+        if (!descriptionInput) {
+            descriptionError.textContent = 'Пожалуйста, введите описание теста.';
+            descriptionError.style.display = 'block';
+            isValid = false;
+        } else {
+            descriptionError.style.display = 'none';
+        }
+
+        if (!platformInput) {
+            platformError.textContent = 'Пожалуйста, введите платформу теста.';
+            platformError.style.display = 'block';
+            isValid = false;
+        } else {
+            platformError.style.display = 'none';
+        }
+
+        if (isValid) {
+            test.name = nameInput;
+            test.description = descriptionInput;
+            test.platform = platformInput;
+            localStorage.setItem('projects', JSON.stringify(projects));
+            loadTests();
+            modal.style.display = 'none';
+        }
+    };
+
+    const cancelButton = document.getElementById('cancel-edit-test-button');
+    cancelButton.onclick = function() {
+        modal.style.display = 'none';
+        clearEditTestModalFields();
+    };
+
+    const closeButton = document.getElementById('close-edit-test-button');
+    closeButton.onclick = function() {
+        modal.style.display = 'none';
+        clearEditTestModalFields();
+    };
+
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            clearEditTestModalFields();
+        }
+    };
 }
+
+function clearTestModalFields() {
+    document.getElementById('test-name-input').value = '';
+    document.getElementById('test-description-input').value = '';
+    document.getElementById('test-platform-input').value = '';
+    document.getElementById('test-name-error').textContent = '';
+    document.getElementById('test-description-error').textContent = '';
+    document.getElementById('test-platform-error').textContent = '';
+}
+
+function clearEditTestModalFields() {
+    document.getElementById('edit-test-name-input').value = '';
+    document.getElementById('edit-test-description-input').value = '';
+    document.getElementById('edit-test-platform-input').value = '';
+    document.getElementById('edit-test-name-error').textContent = '';
+    document.getElementById('edit-test-description-error').textContent = '';
+    document.getElementById('edit-test-platform-error').textContent = '';
+}
+
 
 
 function deleteTest(testIndex) {
@@ -471,5 +609,11 @@ function loadArchiveRuns() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    loadProjects();
     loadArchiveRuns();
+    showPage('dashboard');
+
+    // Инициализация модальных окон для добавления и редактирования тестов
+    document.getElementById('add-test-modal').style.display = 'none';
+    document.getElementById('edit-test-modal').style.display = 'none';
 });
