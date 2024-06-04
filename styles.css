@@ -11,48 +11,53 @@ body {
     left: 0;
     width: 250px;
     height: 100%;
-    background-color: #f8f9fa; /* Цвет фона */
-    color: #333; /* Цвет текста */
+    background-color: #f8f9fa;
+    color: #333;
     padding-top: 20px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Выравнивание по левому краю */
-    justify-content: space-between; /* Выравнивание по краям */
+    align-items: flex-start;
+    justify-content: space-between;
 }
 
 .sidebar a {
-    font-size: 1.3em; /* Увеличенный размер шрифта */
+    font-size: 1.3em;
     padding: 10px 15px;
     text-decoration: none;
-    color: #333; /* Цвет текста */
+    color: #333;
     display: block;
-    width: calc(100% + 90px); /* Ширина на всю длину сайдбара с учетом отступов */
+    width: calc(100% + 90px);
     text-align: left;
     transition: background-color 0.3s ease, border-radius 0.3s ease;
-    border-radius: 5px; /* Закругленные края */
-    margin: 5px 0; /* Отступы между пунктами меню */
+    border-radius: 5px;
+    margin: 5px 0;
 }
 
 .sidebar a:hover {
-    background-color: #e2e6ea; /* Цвет фона при наведении */
-    border-radius: 10px; /* Закругленные края при наведении */
+    background-color: #e2e6ea;
+    border-radius: 10px;
+}
+
+.sidebar a.active {
+    background-color: #e6e6e6;
+    color: #000;
 }
 
 #refresh-container {
     width: 100%;
-    text-align: left; /* Выравнивание по левому краю */
-    padding: 20px 15px; /* Отступы для выравнивания с пунктами меню */
-    margin-bottom: 20px; /* Отступ от нижнего края */
+    text-align: left;
+    padding: 20px 15px;
+    margin-bottom: 20px;
 }
 
 #refresh-container .custom-button {
-    width: calc(100% - 30px); /* Ширина кнопки на всю длину контейнера с учетом отступов */
-    margin: 0; /* Убираем внешние отступы */
-    border-radius: 5px; /* Закругленные края */
+    width: calc(100% - 30px);
+    margin: 0;
+    border-radius: 5px;
 }
 
 .container {
-    margin-left: 250px; /* Отступ слева равный ширине сайдбара */
+    margin-left: 250px;
     padding: 20px;
     width: calc(100% - 250px);
 }
@@ -64,10 +69,34 @@ body {
 .project-card,
 .test-card,
 .run-card {
+    background-color: #fff;
     border: 1px solid #ddd;
-    padding: 1em;
+    padding: 20px;
     margin: 1em 0;
-    border-radius: 5px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.project-card:hover,
+.test-card:hover,
+.run-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.project-card h2,
+.test-card h2,
+.run-card h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.project-card p,
+.test-card p,
+.run-card p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
 }
 
 .unchecked {
@@ -86,22 +115,6 @@ body {
     background-color: #fff3cd;
 }
 
-.custom-button {
-    padding: 10px 20px;
-    margin: 0 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    background-color: #007bff;
-    color: white;
-    transition: background-color 0.3s;
-    font-size: 16px;
-}
-
-.custom-button:hover {
-    background-color: #0056b3;
-}
-
 .modal {
     display: none;
     position: fixed;
@@ -111,30 +124,31 @@ body {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.4);
-}
-
-.modal-content h2 {
-    text-align: left;
-    margin: 0;
-    margin-bottom: 10px;
-    width: calc(100% - 40px);
-    margin: 20px 20px;
-    padding: 0px;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding-top: 60px;
 }
 
 .modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
+    background-color: #fff;
+    margin: 5% auto;
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
     max-width: 500px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     position: relative;
 }
 
+.modal-content h2 {
+    text-align: left;
+    margin: 0 20px 10px;
+    padding: 0;
+    width: calc(100% - 40px);
+}
+
 .close {
-    color: hsl(0, 0%, 67%);
+    color: #aaa;
     float: right;
     font-size: 28px;
     font-weight: bold;
@@ -148,17 +162,32 @@ body {
 }
 
 .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
     margin-top: 20px;
 }
 
 .modal-buttons button {
-    margin-right: 10px;
+    width: calc(100% - 40px);
+    margin: 20px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: block;
+    box-sizing: border-box;
+}
+
+.modal-buttons button:hover {
+    background-color: #aaa;
 }
 
 .modal-input {
     width: 100%;
-    display: center;
+    display: flex;
     flex-direction: column;
+    align-items: center;
 }
 
 #project-name-input,
@@ -189,33 +218,36 @@ body {
     font-size: 1.1em;
 }
 
-.modal-buttons button {
-    width: calc(100% - 40px);
-    margin: 20px 20px;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    display: block;
-    box-sizing: border-box;
-}
-
-.modal-buttons {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 10px;
-}
-
-.modal-buttons button:hover {
-    background-color: hsl(0, 0%, 67%);
-}
-
 .error-message {
     width: calc(100% - 40px);
-    margin: 20px 20px;
+    margin: 20px;
     color: red;
     font-size: 0.9em;
     margin-top: 5px;
     display: none;
+}
+
+.custom-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.custom-button:hover {
+    background-color: #e6e6e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.custom-button.active {
+    background-color: #d9d9d9;
+    border-color: #aaa;
+    color: #000;
 }
