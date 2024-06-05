@@ -76,8 +76,10 @@ function addProject() {
             modal.style.display = 'none';
             document.getElementById('project-name-input').value = '';
             document.getElementById('project-description-input').value = '';
+            showToast('Project created successfully', 'success');
         }
     };
+    
 
     // Обработчик события для кнопки "Отмена" в модальном окне
     const cancelButton = document.getElementById('cancel-project-button');
@@ -176,6 +178,7 @@ function editProject(index) {
             localStorage.setItem('projects', JSON.stringify(projects));
             loadProjects();
             editModal.style.display = 'none';
+            showToast('Project edited successfully', 'info');
         }
     };
 
@@ -197,12 +200,15 @@ function editProject(index) {
 }
 
 
+
 function deleteProject(index) {
     const projects = JSON.parse(localStorage.getItem('projects'));
     projects.splice(index, 1);
     localStorage.setItem('projects', JSON.stringify(projects));
     loadProjects();
+    showToast('Project deleted successfully', 'warning');
 }
+
 
 function viewProject(index) {
     currentProjectIndex = index;
@@ -285,6 +291,7 @@ function addTest() {
             localStorage.setItem('projects', JSON.stringify(projects));
             loadTests();
             modal.style.display = 'none';
+            showToast('Case created successfully', 'success');
         }
     };
 
@@ -362,6 +369,7 @@ function editTest(testIndex) {
             localStorage.setItem('projects', JSON.stringify(projects));
             loadTests();
             modal.style.display = 'none';
+            showToast('Case edited successfully', 'info');
         }
     };
 
@@ -410,6 +418,7 @@ function deleteTest(testIndex) {
     projects[currentProjectIndex].tests.splice(testIndex, 1);
     localStorage.setItem('projects', JSON.stringify(projects));
     loadTests();
+    showToast('Case deleted successfully', 'warning');
 }
 
 function createRun(projectName, testCount) {
@@ -624,3 +633,24 @@ document.getElementById('toggle-sidebar').addEventListener('click', function() {
     sidebar.classList.toggle('hidden');
     container.classList.toggle('shifted');
 });
+
+function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toast-container');
+    
+    const toast = document.createElement('div');
+    toast.classList.add('toast', type);
+    toast.textContent = message;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100); // Slight delay to trigger the CSS transition
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toastContainer.removeChild(toast);
+        }, 500); // Duration of the hide animation
+    }, 3000); // Duration to show the toast
+}
