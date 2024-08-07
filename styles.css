@@ -128,6 +128,7 @@ body {
     background-color: #fff3cd;
 }
 
+/* Стили для модальных окон */
 .modal {
     display: none;
     position: fixed;
@@ -154,10 +155,17 @@ body {
 }
 
 .modal-content h2 {
-    text-align: left;
+    margin: 0 20px;
+    padding: 0;
+    width: calc(100% - 40px); /* Ширина заголовка по ширине модального окна */
+}
+
+.modal-content p {
     margin: 0 20px 10px;
     padding: 0;
-    width: calc(100% - 40px);
+    width: calc(100% - 40px); /* Ширина текста по ширине модального окна */
+    font-size: 16px; /* Размер шрифта для согласования с другими элементами */
+    font-weight: bold; /* Жирный текст для выделения */
 }
 
 .close {
@@ -165,25 +173,59 @@ body {
     float: right;
     font-size: 28px;
     font-weight: bold;
+    cursor: pointer; /* Убедитесь, что курсор изменяется на указатель */
 }
 
 .close:hover,
 .close:focus {
     color: black;
     text-decoration: none;
-    cursor: pointer;
 }
 
-.modal-buttons {
+/* Стили для плиток платформ в модальном окне */
+.platform-tiles {
     display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
+    flex-wrap: wrap; /* Позволяет перенос плиток на следующую строку, если не хватает места */
+    gap: 10px;
+    margin: 10px 20px; /* Отступы от краёв модального окна */
+}
+
+.platform-tile {
+    flex: 1 1 auto; /* Автоматическая ширина плитки, чтобы заполнять доступное пространство */
+    padding: 5px; /* Уменьшенный внутренний отступ */
+    font-size: 12px; /* Уменьшенный размер шрифта */
+    background-color: #dcdcdc; /* Серый цвет фона по умолчанию */
+    border: 1px solid #aaa; /* Граница плиток */
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+    box-sizing: border-box;
+    margin-bottom: 10px; /* Отступ снизу для кнопок */
+    width: calc(33.33% - 10px); /* Ширина плиток с учетом отступов */
+}
+
+.platform-tile.selected {
+    background-color: #333; /* Тёмно-серый цвет при выделении */
+    color: white;
+    transform: scale(1.05);
+}
+
+.platform-tile:hover {
+    background-color: #c0c0c0; /* Светло-серый цвет при наведении */
+}
+
+/* Стили для кнопок в модальном окне */
+.modal-buttons {
+    margin-top: 20px; /* Отступ сверху для кнопок */
+    display: flex;
+    justify-content: space-between; /* Кнопки на одной линии */
 }
 
 .modal-buttons button {
-    width: calc(100% - 40px);
-    margin: 20px;
+    width: calc(50% - 10px); /* Ширина кнопок с учетом отступов */
     padding: 10px;
+    margin: 0 20px; /* Отступы по бокам */
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -192,35 +234,30 @@ body {
     box-sizing: border-box;
 }
 
-.modal-buttons button:hover {
-    background-color: #aaa;
+.custom-button {
+    background-color: #e6e6e6;
+    color: #333;
+    font-size: 14px;
+    font-weight: 600;
 }
 
-.modal-input {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.custom-button:hover {
+    background-color: #d6d4d4;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-#project-name-input,
-#project-description-input {
-    width: calc(100% - 40px);
-    margin: 10px 20px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    resize: none;
-    box-sizing: border-box;
-    display: block;
+.custom-button.active {
+    background-color: #d9d9d9;
+    border-color: #aaa;
+    color: #000;
 }
 
+/* Стили для полей ввода */
 .modal-content input[type="text"],
 .modal-content textarea {
-    width: 100%;
+    width: calc(100% - 40px);
     padding: 12px;
-    margin: 8px 0;
-    display: inline-block;
+    margin: 8px 20px; /* Отступы сверху и снизу, отступы по бокам включены в ширину */
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
@@ -233,37 +270,12 @@ body {
 
 .error-message {
     width: calc(100% - 40px);
-    margin: 20px;
+    margin: 5px 20px; /* Отступы сверху и снизу, отступы по бокам включены в ширину */
     color: red;
     font-size: 0.9em;
-    margin-top: 5px;
     display: none;
 }
 
-.custom-button {
-    display: inline-block;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: center;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.custom-button:hover {
-    background-color: #e6e6e6;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.custom-button.active {
-    background-color: #d9d9d9;
-    border-color: #aaa;
-    color: #000;
-}
 
 #toast-container {
     position: fixed;

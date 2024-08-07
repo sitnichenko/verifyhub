@@ -66,7 +66,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно для добавления проекта -->
     <div id="add-project-modal" class="modal">
         <div class="modal-content">
             <span id="close-project-button" class="close">&times;</span>
@@ -81,12 +80,16 @@
             </div>
             <div>
                 <p>Платформы:</p>
-                <label><input type="checkbox" value="web"> Web</label>
-                <label><input type="checkbox" value="android"> Android</label>
-                <label><input type="checkbox" value="ios"> iOS</label>
+                <div class="platform-tiles">
+                    <div class="platform-tile" data-platform="web">Web</div>
+                    <div class="platform-tile" data-platform="android">Android</div>
+                    <div class="platform-tile" data-platform="ios">iOS</div>
+                </div>
             </div>
-            <button class="custom-button" id="save-project-button">Сохранить</button>
-            <button class="custom-button" id="cancel-project-button">Отмена</button>
+            <div class="modal-buttons">
+                <button class="custom-button" id="save-project-button">Сохранить</button>
+                <button class="custom-button" id="cancel-project-button">Отмена</button>
+            </div>
         </div>
     </div>
 
@@ -105,9 +108,11 @@
         </div>
         <div>
             <p>Платформы:</p>
-            <label><input type="checkbox" id="edit-project-web-checkbox" value="web"> Web</label>
-            <label><input type="checkbox" id="edit-project-android-checkbox" value="android"> Android</label>
-            <label><input type="checkbox" id="edit-project-ios-checkbox" value="ios"> iOS</label>
+            <div class="platform-tiles">
+                <div class="platform-tile" data-platform="web">Web</div>
+                <div class="platform-tile" data-platform="android">Android</div>
+                <div class="platform-tile" data-platform="ios">iOS</div>
+            </div>
         </div>
         <button class="custom-button" id="save-edit-project-button">Сохранить</button>
         <button class="custom-button" id="cancel-edit-project-button">Отмена</button>

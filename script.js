@@ -43,15 +43,28 @@ function createProjectCard(project, index) {
     return projectCard;
 }
 
+// Функция для инициализации обработчиков событий на платформы
+function initializePlatformSelection() {
+    const platformTiles = document.querySelectorAll('.platform-tile');
+    platformTiles.forEach(tile => {
+        tile.addEventListener('click', () => {
+            tile.classList.toggle('selected');
+        });
+    });
+}
+
 function addProject() {
     const modal = document.getElementById('add-project-modal');
     modal.style.display = 'block';
+
+    // Установка обработчиков кликов для плиток платформ при открытии модального окна
+    initializePlatformSelection();
 
     const saveButton = document.getElementById('save-project-button');
     saveButton.onclick = function() {
         const nameInput = document.getElementById('project-name-input').value;
         const descriptionInput = document.getElementById('project-description-input').value;
-        const platforms = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
+        const platforms = Array.from(document.querySelectorAll('.platform-tile.selected')).map(tile => tile.getAttribute('data-platform'));
         const nameError = document.getElementById('project-name-error');
         const descriptionError = document.getElementById('project-description-error');
 
@@ -73,96 +86,127 @@ function addProject() {
             localStorage.setItem('projects', JSON.stringify(projects));
             loadProjects();
             showPage('projects');
+            resetForm(); // Сброс формы
             modal.style.display = 'none';
-            document.getElementById('project-name-input').value = '';
-            document.getElementById('project-description-input').value = '';
-            showToast('Project created successfully', 'success');
+            showToast('Проект успешно создан', 'success');
         }
     };
-    
 
     // Обработчик события для кнопки "Отмена" в модальном окне
-    const cancelButton = document.getElementById('cancel-project-button');
+    const cancelButton = document.getElementById('cancel-project-button'); 
     cancelButton.onclick = function() {
+        resetForm(); // Сброс формы
         modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
-        // Очищаем текст ошибок
-        document.getElementById('project-name-error').textContent = '';
-        document.getElementById('project-description-error').textContent = '';
     };
 
     // Обработчик события для кнопки закрытия модального окна (крестик)
-    const closeButton = document.getElementById('close-project-button');
+    const closeButton = document.getElementById('close-add-project-button');
     closeButton.onclick = function() {
+        resetForm(); // Сброс формы
         modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
-        // Очищаем текст ошибок
-        document.getElementById('project-name-error').textContent = '';
-        document.getElementById('project-description-error').textContent = '';
     };
 
     // Обработчик события для клика вне модального окна (закрывает окно)
     window.onclick = function(event) {
         if (event.target === modal) {
+            resetForm(); // Сброс формы
             modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
-            // Очищаем текст ошибок
-            document.getElementById('project-name-error').textContent = '';
-            document.getElementById('project-description-error').textContent = '';
         }
     };
 }
 
+// Функция для сброса формы
+function resetForm() {
+    // Очищаем поля ввода
+    document.getElementById('project-name-input').value = '';
+    document.getElementById('project-description-input').value = '';
+    
+    // Сбрасываем состояние плиток платформ
+    const platformTiles = document.querySelectorAll('.platform-tile');
+    platformTiles.forEach(tile => {
+        tile.classList.remove('selected');
+    });
+
+    // Очищаем текст ошибок
+    document.getElementById('project-name-error').textContent = '';
+    document.getElementById('project-description-error').textContent = '';
+}
+
+// Функция инициализации обработчиков кликов для плиток платформ
+function initializePlatformSelection() {
+    const platformTiles = document.querySelectorAll('.platform-tile');
+    platformTiles.forEach(tile => {
+        // Удаляем предыдущие обработчики кликов, если есть
+        tile.removeEventListener('click', toggleTileSelection);
+        // Добавляем новый обработчик кликов
+        tile.addEventListener('click', toggleTileSelection);
+    });
+}
+
+// Функция для переключения выбора плитки платформ
+function toggleTileSelection() {
+    this.classList.toggle('selected');
+}
+
 function loadProjects() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
     const projectList = document.getElementById('project-list');
-    projectList.innerHTML = '';
+    projectList.innerHTML = ''; // Очистка списка перед обновлением
+
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
     projects.forEach((project, index) => {
-        const projectCard = document.createElement('div');
-        projectCard.className = 'project-card';
-        projectCard.innerHTML = `
+        const projectElement = document.createElement('div');
+        projectElement.classList.add('project-card');
+        projectElement.innerHTML = `
             <h2>${project.name}</h2>
             <p>${project.description}</p>
-            <p>Платформы: ${project.platforms.length > 0 ? project.platforms.join(', ') : 'Не выбраны'}</p>
+            <p>Платформы: ${project.platforms.join(', ')}</p>
             <button onclick="viewProject(${index})">Открыть</button>
             <button onclick="editProject(${index})">Редактировать</button>
             <button onclick="deleteProject(${index})">Удалить</button>
         `;
-        projectList.appendChild(projectCard);
+        projectList.appendChild(projectElement);
     });
 }
 
-
-
 function editProject(index) {
-    const projects = JSON.parse(localStorage.getItem('projects'));
+    const modal = document.getElementById('edit-project-modal');
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
     const project = projects[index];
 
-    // Заполнение полей модального окна данными текущего проекта
+    // Заполняем поля данными текущего проекта
     document.getElementById('edit-project-name-input').value = project.name;
     document.getElementById('edit-project-description-input').value = project.description;
-    document.getElementById('edit-project-web-checkbox').checked = project.platforms.includes('web');
-    document.getElementById('edit-project-android-checkbox').checked = project.platforms.includes('android');
-    document.getElementById('edit-project-ios-checkbox').checked = project.platforms.includes('ios');
 
-    const editModal = document.getElementById('edit-project-modal');
-    editModal.style.display = 'block';
+    // Установка состояния плиток и обработчиков кликов
+    const platformTiles = document.querySelectorAll('#edit-project-modal .platform-tile');
+    platformTiles.forEach(tile => {
+        tile.classList.remove('selected');
+    });
+
+    project.platforms.forEach(platform => {
+        const tile = document.querySelector(`#edit-project-modal .platform-tile[data-platform="${platform}"]`);
+        if (tile) {
+            tile.classList.add('selected');
+        }
+    });
+
+    // Инициализация обработчиков кликов для плиток платформ
+    initializePlatformSelection();
+
+    modal.style.display = 'block';
 
     const saveButton = document.getElementById('save-edit-project-button');
     saveButton.onclick = function() {
         const nameInput = document.getElementById('edit-project-name-input').value;
         const descriptionInput = document.getElementById('edit-project-description-input').value;
-        const webCheckbox = document.getElementById('edit-project-web-checkbox').checked;
-        const androidCheckbox = document.getElementById('edit-project-android-checkbox').checked;
-        const iosCheckbox = document.getElementById('edit-project-ios-checkbox').checked;
-
-        const platforms = [];
-        if (webCheckbox) platforms.push('web');
-        if (androidCheckbox) platforms.push('android');
-        if (iosCheckbox) platforms.push('ios');
-
+        const selectedTiles = document.querySelectorAll('#edit-project-modal .platform-tile.selected');
+        const platforms = Array.from(selectedTiles).map(tile => tile.getAttribute('data-platform'));
         const nameError = document.getElementById('edit-project-name-error');
         const descriptionError = document.getElementById('edit-project-description-error');
 
         let isValid = true;
 
+        // Проверка поля имени
         if (!nameInput) {
             nameError.textContent = 'Пожалуйста, введите название проекта.';
             nameError.style.display = 'block';
@@ -171,34 +215,37 @@ function editProject(index) {
             nameError.style.display = 'none';
         }
 
+        // Если все валидно, сохраняем изменения
         if (isValid) {
             projects[index].name = nameInput;
             projects[index].description = descriptionInput;
             projects[index].platforms = platforms;
             localStorage.setItem('projects', JSON.stringify(projects));
             loadProjects();
-            editModal.style.display = 'none';
-            showToast('Project edited successfully', 'info');
+            modal.style.display = 'none';
+            showToast('Проект успешно обновлен', 'success');
         }
     };
 
+    // Обработчик события для кнопки "Отмена" в модальном окне
     const cancelButton = document.getElementById('cancel-edit-project-button');
     cancelButton.onclick = function() {
-        editModal.style.display = 'none';
+        modal.style.display = 'none';
     };
 
+    // Обработчик события для кнопки закрытия модального окна (крестик)
     const closeButton = document.getElementById('close-edit-project-button');
     closeButton.onclick = function() {
-        editModal.style.display = 'none';
+        modal.style.display = 'none';
     };
 
+    // Обработчик события для клика вне модального окна (закрывает окно)
     window.onclick = function(event) {
-        if (event.target === editModal) {
-            editModal.style.display = 'none';
+        if (event.target === modal) {
+            modal.style.display = 'none';
         }
     };
 }
-
 
 
 function deleteProject(index) {
@@ -206,7 +253,7 @@ function deleteProject(index) {
     projects.splice(index, 1);
     localStorage.setItem('projects', JSON.stringify(projects));
     loadProjects();
-    showToast('Project deleted successfully', 'warning');
+    showToast('Проект успешно удалён', 'warning');
 }
 
 
