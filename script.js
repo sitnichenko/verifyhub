@@ -43,22 +43,25 @@ function createProjectCard(project, index) {
     return projectCard;
 }
 
-// Функция для инициализации обработчиков событий на платформы
+// Функция инициализации обработчиков кликов для плиток платформ (вызывается один раз)
 function initializePlatformSelection() {
     const platformTiles = document.querySelectorAll('.platform-tile');
     platformTiles.forEach(tile => {
-        tile.addEventListener('click', () => {
-            tile.classList.toggle('selected');
-        });
+        tile.addEventListener('click', toggleTileSelection);
     });
+}
+
+// Функция для переключения выбора плитки платформ
+function toggleTileSelection() {
+    this.classList.toggle('selected');
 }
 
 function addProject() {
     const modal = document.getElementById('add-project-modal');
     modal.style.display = 'block';
 
-    // Установка обработчиков кликов для плиток платформ при открытии модального окна
-    initializePlatformSelection();
+    // Сбрасываем состояние платформ при открытии модального окна
+    resetForm();
 
     const saveButton = document.getElementById('save-project-button');
     saveButton.onclick = function() {
@@ -93,14 +96,14 @@ function addProject() {
     };
 
     // Обработчик события для кнопки "Отмена" в модальном окне
-    const cancelButton = document.getElementById('cancel-project-button'); 
+    const cancelButton = document.getElementById('cancel-project-button');
     cancelButton.onclick = function() {
         resetForm(); // Сброс формы
         modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
     };
 
     // Обработчик события для кнопки закрытия модального окна (крестик)
-    const closeButton = document.getElementById('close-add-project-button');
+    const closeButton = document.getElementById('close-project-button');
     closeButton.onclick = function() {
         resetForm(); // Сброс формы
         modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
@@ -120,7 +123,7 @@ function resetForm() {
     // Очищаем поля ввода
     document.getElementById('project-name-input').value = '';
     document.getElementById('project-description-input').value = '';
-    
+
     // Сбрасываем состояние плиток платформ
     const platformTiles = document.querySelectorAll('.platform-tile');
     platformTiles.forEach(tile => {
@@ -132,13 +135,10 @@ function resetForm() {
     document.getElementById('project-description-error').textContent = '';
 }
 
-// Функция инициализации обработчиков кликов для плиток платформ
+// Функция инициализации обработчиков кликов для плиток платформ (вызывается один раз)
 function initializePlatformSelection() {
     const platformTiles = document.querySelectorAll('.platform-tile');
     platformTiles.forEach(tile => {
-        // Удаляем предыдущие обработчики кликов, если есть
-        tile.removeEventListener('click', toggleTileSelection);
-        // Добавляем новый обработчик кликов
         tile.addEventListener('click', toggleTileSelection);
     });
 }
@@ -146,6 +146,11 @@ function initializePlatformSelection() {
 // Функция для переключения выбора плитки платформ
 function toggleTileSelection() {
     this.classList.toggle('selected');
+}
+
+// Вызываем инициализацию обработчиков плиток платформ один раз при загрузке страницы
+window.onload = function() {
+    initializePlatformSelection();
 }
 
 function loadProjects() {
@@ -701,3 +706,169 @@ function showToast(message, type = 'info') {
         }, 500); // Duration of the hide animation
     }, 3000); // Duration to show the toast
 }
+
+function exportData() {
+    // Собираем данные из localStorage
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const runs = JSON.parse(localStorage.getItem('runs')) || [];
+    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
+
+    // Создаем объект для экспорта
+    const data = {
+        projects: projects,
+        runs: runs,
+        archivedRuns: archivedRuns
+    };
+
+    // Преобразуем объект в JSON-строку
+    const jsonData = JSON.stringify(data, null, 2);
+
+    // Создаем Blob для скачивания
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // Создаем временный элемент для скачивания
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data-export.json';
+    document.body.appendChild(a);
+    a.click();
+
+    // Удаляем временный элемент и освобождаем URL
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+document.getElementById('export-button').addEventListener('click', exportData);
+
+function exportData() {
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const runs = JSON.parse(localStorage.getItem('runs')) || [];
+    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
+
+    const data = { projects, runs, archivedRuns };
+    const jsonData = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data-export.json';
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function exportData() {
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const runs = JSON.parse(localStorage.getItem('runs')) || [];
+    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
+
+    const data = { projects, runs, archivedRuns };
+    const jsonData = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data-export.json';
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function exportData() {
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const runs = JSON.parse(localStorage.getItem('runs')) || [];
+    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
+
+    const data = { projects, runs, archivedRuns };
+    const jsonData = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data-export.json';
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function exportData() {
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const runs = JSON.parse(localStorage.getItem('runs')) || [];
+    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
+
+    const data = { projects, runs, archivedRuns };
+    const jsonData = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data-export.json';
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const jsonData = JSON.parse(e.target.result);
+
+            if (jsonData.projects && jsonData.runs && jsonData.archivedRuns) {
+                // Считываем текущие данные из localStorage
+                const currentProjects = JSON.parse(localStorage.getItem('projects')) || [];
+                const currentRuns = JSON.parse(localStorage.getItem('runs')) || [];
+                const currentArchivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
+
+                // Объединяем текущие данные с импортированными
+                const newProjects = [...currentProjects, ...jsonData.projects];
+                const newRuns = [...currentRuns, ...jsonData.runs];
+                const newArchivedRuns = [...currentArchivedRuns, ...jsonData.archivedRuns];
+
+                // Сохраняем объединенные данные обратно в localStorage
+                localStorage.setItem('projects', JSON.stringify(newProjects));
+                localStorage.setItem('runs', JSON.stringify(newRuns));
+                localStorage.setItem('archivedRuns', JSON.stringify(newArchivedRuns));
+
+                alert('Данные успешно импортированы!');
+
+                // Обновляем отображение проектов, прогонов и архивов
+                loadProjects();
+                loadRuns();
+                loadArchiveRuns();
+            } else {
+                alert('Некорректная структура данных в JSON файле.');
+            }
+        } catch (error) {
+            alert('Ошибка при чтении или парсинге файла: ' + error.message);
+        }
+    };
+
+    reader.readAsText(file);
+}
+
+// Функции loadRuns и loadArchiveRuns остаются без изменений
+// Они будут автоматически отображать новые данные после импорта
+
+document.getElementById('export-button').addEventListener('click', exportData);
+document.getElementById('import-file').addEventListener('change', importData);
+
+// Первоначальный рендер данных, если он необходим
+loadProjects();
+loadRuns();
+loadArchiveRuns();
