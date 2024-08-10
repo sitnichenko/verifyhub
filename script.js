@@ -577,21 +577,45 @@ function loadRepository() {
     repositoryList.innerHTML = ''; // Очистка предыдущего содержимого
 
     projects.forEach(project => {
-        project.tests.forEach((test, testIndex) => {
-            // Убедимся, что platform всегда массив
-            const platforms = Array.isArray(test.platform) ? test.platform : [test.platform];
+        // Создание элемента для проекта
+        const projectContainer = document.createElement('div');
+        projectContainer.className = 'project-container';
 
-            const testCard = document.createElement('div');
-            testCard.className = 'test-card';
-            testCard.innerHTML = `
-                <h3>${test.name}</h3>
-                <p>${test.description}</p>
-                <p>Платформа: ${platforms.join(', ')}</p>
-                <button onclick="editTest(${testIndex}, '${project.id}')">Редактировать</button>
-                <button onclick="deleteTest(${testIndex}, '${project.id}')">Удалить</button>
-            `;
-            repositoryList.appendChild(testCard);
-        });
+        // Добавление заголовка проекта
+        const projectTitle = document.createElement('h2');
+        projectTitle.textContent = project.name; // или используйте другую переменную, если имя хранится по-другому
+        projectContainer.appendChild(projectTitle);
+
+        // Проверка наличия тестов и их отображение
+        if (project.tests && project.tests.length > 0) {
+            const testList = document.createElement('div');
+            testList.className = 'test-list';
+
+            project.tests.forEach((test, testIndex) => {
+                // Убедимся, что platform всегда массив
+                const platforms = Array.isArray(test.platform) ? test.platform : [test.platform];
+
+                const testCard = document.createElement('div');
+                testCard.className = 'test-card';
+                testCard.innerHTML = `
+                    <h3>${test.name}</h3>
+                    <p>${test.description}</p>
+                    <p>Платформа: ${platforms.join(', ')}</p>
+                    <button onclick="editTest(${testIndex}, '${project.id}')">Редактировать</button>
+                    <button onclick="deleteTest(${testIndex}, '${project.id}')">Удалить</button>
+                `;
+                testList.appendChild(testCard);
+            });
+
+            projectContainer.appendChild(testList);
+        } else {
+            // Сообщение о том, что тестов нет
+            const noTestsMessage = document.createElement('p');
+            noTestsMessage.textContent = 'Нет тестов для этого проекта.';
+            projectContainer.appendChild(noTestsMessage);
+        }
+
+        repositoryList.appendChild(projectContainer);
     });
 }
 

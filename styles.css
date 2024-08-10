@@ -322,3 +322,25 @@ body {
 .toast.warning {
     background-color: #ffc107;
 }
+
+.project-container {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    padding: 10px;
+}
+
+.test-list {
+    margin-top: 10px;
+}
+
+.test-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.test-card button {
+    margin-right: 5px;
+}
