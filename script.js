@@ -279,6 +279,10 @@ function viewProject(index) {
     showPage('project-detail');
 }
 
+function selectProject(index) {
+    currentProjectIndex = index;
+    loadTests(); // Загрузить тесты для выбранного проекта
+}
 function loadTests() {
     // Получаем проекты из localStorage
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
@@ -443,23 +447,15 @@ function editTest(testIndex, projectIndex) {
         return;
     }
 
-    // Заполняем поля данными текущего теста
+    // Предзаполнение данных теста в модальное окно
     document.getElementById('edit-test-name-input').value = test.name;
     document.getElementById('edit-test-description-input').value = test.description;
 
     const modal = document.getElementById('edit-test-modal');
     const platformTilesContainer = document.getElementById('edit-test-platform-tiles');
-
-    if (!modal || !platformTilesContainer) {
-        console.error('Не удалось найти модальное окно или контейнер плиток платформ.');
-        return;
-    }
-
-    // Очищаем старые плитки платформ
     platformTilesContainer.innerHTML = '';
 
-    // Создаем плитки платформ для модального окна
-    const allPlatforms = ['web', 'android', 'ios']; // Все возможные платформы
+    const allPlatforms = ['web', 'android', 'ios'];
     allPlatforms.forEach(platform => {
         const tile = document.createElement('div');
         tile.className = 'platform-tile';
@@ -467,7 +463,7 @@ function editTest(testIndex, projectIndex) {
         tile.textContent = capitalize(platform);
 
         if (test.platform.includes(platform)) {
-            tile.classList.add('selected'); // Выделяем платформы теста
+            tile.classList.add('selected');
         }
 
         tile.onclick = function() {
@@ -480,9 +476,6 @@ function editTest(testIndex, projectIndex) {
     modal.style.display = 'block';
 
     const saveButton = document.getElementById('save-edit-test-button');
-    const cancelButton = document.getElementById('cancel-edit-test-button');
-    const closeButton = document.getElementById('close-edit-test-button');
-
     saveButton.onclick = function() {
         const nameInput = document.getElementById('edit-test-name-input').value;
         const descriptionInput = document.getElementById('edit-test-description-input').value;
@@ -490,9 +483,6 @@ function editTest(testIndex, projectIndex) {
         const platforms = Array.from(selectedTiles).map(tile => tile.getAttribute('data-platform'));
 
         const nameError = document.getElementById('edit-test-name-error');
-        const descriptionError = document.getElementById('edit-test-description-error');
-        const platformError = document.getElementById('edit-test-platform-error');
-
         let isValid = true;
 
         if (!nameInput) {
@@ -503,32 +493,27 @@ function editTest(testIndex, projectIndex) {
             nameError.style.display = 'none';
         }
 
-        descriptionError.style.display = 'none';
-        platformError.style.display = 'none';
-
         if (isValid) {
-            // Обновляем тест в правильном проекте
             projects[projectIndex].tests[testIndex] = {
                 ...test,
                 name: nameInput,
                 description: descriptionInput,
-                platform: platforms // Обновляем платформы как массив
+                platform: platforms
             };
 
             localStorage.setItem('projects', JSON.stringify(projects));
-
-            // Обновляем только измененный тест в DOM
-            updateTestInDOM(testIndex, projectIndex, {
-                name: nameInput,
-                description: descriptionInput,
-                platform: platforms
-            });
-
+            
+            loadTests(); // Обновляем тесты на странице проекта
+            loadRepository(); // Обновляем тесты на странице репозитория
+            
             modal.style.display = 'none';
             clearEditTestModalFields();
             showToast('Тест успешно обновлен', 'info');
         }
     };
+
+    const cancelButton = document.getElementById('cancel-edit-test-button');
+    const closeButton = document.getElementById('close-edit-test-button');
 
     cancelButton.onclick = function() {
         modal.style.display = 'none';
@@ -552,16 +537,14 @@ function editTest(testIndex, projectIndex) {
         document.getElementById('edit-test-description-input').value = '';
         document.querySelectorAll('#edit-test-platform-tiles .platform-tile').forEach(tile => tile.classList.remove('selected'));
         document.getElementById('edit-test-name-error').style.display = 'none';
-        document.getElementById('edit-test-description-error').style.display = 'none';
-        document.getElementById('edit-test-platform-error').style.display = 'none';
     }
 }
 
-function updateTestInDOM(testIndex, projectIndex, updatedTest) {
-    const testList = document.getElementById('test-list');
-    const testCards = testList.querySelectorAll('.test-card');
+function updateTestInProjectDOM(testIndex, projectIndex, updatedTest) {
+    const projectContainers = document.querySelectorAll('.project-container');
+    const testCards = projectContainers[projectIndex]?.querySelectorAll('.test-card');
 
-    if (testCards[testIndex]) {
+    if (testCards && testCards[testIndex]) {
         const testCard = testCards[testIndex];
         testCard.innerHTML = `
             <h3>${updatedTest.name}</h3>
