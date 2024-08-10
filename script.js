@@ -280,20 +280,37 @@ function viewProject(index) {
 }
 
 function loadTests() {
-    const projects = JSON.parse(localStorage.getItem('projects'));
+    // Получаем проекты из localStorage
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    
+    // Получаем текущий проект
     const project = projects[currentProjectIndex];
+    
+    if (!project) {
+        console.error('Текущий проект не найден.');
+        return;
+    }
+
+    // Получаем элемент списка тестов
     const testList = document.getElementById('test-list');
     testList.innerHTML = '';
+
+    // Проверяем наличие тестов в проекте
+    if (!project.tests || project.tests.length === 0) {
+        testList.innerHTML = '<p>Тесты отсутствуют.</p>';
+        return;
+    }
+
+    // Создаем карточки для каждого теста
     project.tests.forEach((test, testIndex) => {
         const testCard = document.createElement('div');
         testCard.className = 'test-card';
         testCard.innerHTML = `
             <h3>${test.name}</h3>
             <p>${test.description}</p>
-            <p>Платформа: ${test.platform}</p>
-            <button onclick="editTest(${testIndex})">Редактировать</button>
-            <button onclick="deleteTest(${testIndex})">Удалить</button>
-            
+            <p>Платформа: ${test.platform.join(', ')}</p> <!-- Убедитесь, что test.platform - это массив -->
+            <button onclick="editTest(${testIndex}, ${currentProjectIndex})">Редактировать</button>
+            <button onclick="deleteTest(${testIndex}, ${currentProjectIndex})">Удалить</button>
         `;
         testList.appendChild(testCard);
     });
@@ -417,9 +434,9 @@ function clearTestModalFields() {
 }
 
 
-function editTest(testIndex) {
+function editTest(testIndex, projectIndex) {
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const test = projects[currentProjectIndex]?.tests[testIndex];
+    const test = projects[projectIndex]?.tests[testIndex];
 
     if (!test) {
         console.error('Тест не найден.');
@@ -466,11 +483,6 @@ function editTest(testIndex) {
     const cancelButton = document.getElementById('cancel-edit-test-button');
     const closeButton = document.getElementById('close-edit-test-button');
 
-    if (!saveButton || !cancelButton || !closeButton) {
-        console.error('Не удалось найти кнопки в модальном окне.');
-        return;
-    }
-
     saveButton.onclick = function() {
         const nameInput = document.getElementById('edit-test-name-input').value;
         const descriptionInput = document.getElementById('edit-test-description-input').value;
@@ -491,16 +503,27 @@ function editTest(testIndex) {
             nameError.style.display = 'none';
         }
 
-        // Теперь описание и платформы не обязательны
         descriptionError.style.display = 'none';
         platformError.style.display = 'none';
 
         if (isValid) {
-            test.name = nameInput;
-            test.description = descriptionInput;
-            test.platform = platforms; // Обновляем платформы как массив
+            // Обновляем тест в правильном проекте
+            projects[projectIndex].tests[testIndex] = {
+                ...test,
+                name: nameInput,
+                description: descriptionInput,
+                platform: platforms // Обновляем платформы как массив
+            };
+
             localStorage.setItem('projects', JSON.stringify(projects));
-            loadTests(); // Обновите список тестов
+
+            // Обновляем только измененный тест в DOM
+            updateTestInDOM(testIndex, projectIndex, {
+                name: nameInput,
+                description: descriptionInput,
+                platform: platforms
+            });
+
             modal.style.display = 'none';
             clearEditTestModalFields();
             showToast('Тест успешно обновлен', 'info');
@@ -523,22 +546,32 @@ function editTest(testIndex) {
             clearEditTestModalFields();
         }
     };
+
+    function clearEditTestModalFields() {
+        document.getElementById('edit-test-name-input').value = '';
+        document.getElementById('edit-test-description-input').value = '';
+        document.querySelectorAll('#edit-test-platform-tiles .platform-tile').forEach(tile => tile.classList.remove('selected'));
+        document.getElementById('edit-test-name-error').style.display = 'none';
+        document.getElementById('edit-test-description-error').style.display = 'none';
+        document.getElementById('edit-test-platform-error').style.display = 'none';
+    }
 }
 
-function clearEditTestModalFields() {
-    document.getElementById('edit-test-name-input').value = '';
-    document.getElementById('edit-test-description-input').value = '';
-    document.querySelectorAll('#edit-test-platform-tiles .platform-tile').forEach(tile => tile.classList.remove('selected'));
-    document.getElementById('edit-test-name-error').textContent = '';
-    document.getElementById('edit-test-description-error').textContent = '';
-    document.getElementById('edit-test-platform-error').textContent = '';
+function updateTestInDOM(testIndex, projectIndex, updatedTest) {
+    const testList = document.getElementById('test-list');
+    const testCards = testList.querySelectorAll('.test-card');
+
+    if (testCards[testIndex]) {
+        const testCard = testCards[testIndex];
+        testCard.innerHTML = `
+            <h3>${updatedTest.name}</h3>
+            <p>${updatedTest.description}</p>
+            <p>Платформа: ${updatedTest.platform.join(', ')}</p>
+            <button onclick="editTest(${testIndex}, ${projectIndex})">Редактировать</button>
+            <button onclick="deleteTest(${testIndex}, ${projectIndex})">Удалить</button>
+        `;
+    }
 }
-
-function capitalize(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-
 
 function deleteTest(testIndex) {
     const projects = JSON.parse(localStorage.getItem('projects'));
@@ -576,7 +609,7 @@ function loadRepository() {
     const repositoryList = document.getElementById('repository-list');
     repositoryList.innerHTML = ''; // Очистка предыдущего содержимого
 
-    projects.forEach(project => {
+    projects.forEach((project, projectIndex) => {
         // Создание элемента для проекта
         const projectContainer = document.createElement('div');
         projectContainer.className = 'project-container';
@@ -601,8 +634,8 @@ function loadRepository() {
                     <h3>${test.name}</h3>
                     <p>${test.description}</p>
                     <p>Платформа: ${platforms.join(', ')}</p>
-                    <button onclick="editTest(${testIndex}, '${project.id}')">Редактировать</button>
-                    <button onclick="deleteTest(${testIndex}, '${project.id}')">Удалить</button>
+                    <button onclick="editTest(${testIndex}, ${projectIndex})">Редактировать</button>
+                    <button onclick="deleteTest(${testIndex}, ${projectIndex})">Удалить</button>
                 `;
                 testList.appendChild(testCard);
             });
