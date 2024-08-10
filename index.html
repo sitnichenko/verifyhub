@@ -14,6 +14,7 @@
         <div>
             <a href="#" onclick="showPage('dashboard')">Дашборд</a>
             <a href="#" onclick="showPage('projects')">Проекты</a>
+            <a href="#" onclick="showPage('repository')">Репозиторий</a> 
             <a href="#" onclick="showPage('runs')">Прогоны</a>
             <a href="#" onclick="showPage('archive')">Архив</a>
         </div>
@@ -30,7 +31,7 @@
     <div class="container">
         <div id="dashboard" class="page">
             <h1>Дашборд</h1>
-            <p>Выберите раздел в навигации.</p>
+            <p>Тут пока ничего нет.</p>
         </div>
 
         <div id="projects" class="page hidden">
@@ -55,6 +56,11 @@
             <!-- форма добавления проекта -->
         </div>
 
+        <div id="repository" class="page hidden">
+            <h1>Репозиторий тестов</h1>
+            <div id="repository-list"></div>
+        </div>
+        
         <div id="runs" class="page hidden">
             <h1>Прогоны</h1>
             <div class="buttons">
@@ -68,6 +74,7 @@
             <div id="archive-list"></div>
         </div>
     </div>
+
 
     <div id="add-project-modal" class="modal">
         <div class="modal-content">

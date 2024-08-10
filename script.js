@@ -7,12 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function showPage(pageId) {
     const pages = document.querySelectorAll('.page');
-    pages.forEach(page => {
-        page.style.display = 'none';
-    });
-    document.getElementById(pageId).style.display = 'block';
-}
+    pages.forEach(page => page.classList.add('hidden'));
 
+    document.getElementById(pageId).classList.remove('hidden');
+
+    if (pageId === 'repository') {
+        loadRepository(); // Загружаем тесты при открытии страницы репозитория
+    }
+}
 
 function refreshPage() {
     localStorage.clear();
@@ -569,6 +571,29 @@ function createRun(projectName, testCount) {
     loadRuns(); // Загружаем прогоны с обновленными данными
 }
 
+function loadRepository() {
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const repositoryList = document.getElementById('repository-list');
+    repositoryList.innerHTML = ''; // Очистка предыдущего содержимого
+
+    projects.forEach(project => {
+        project.tests.forEach((test, testIndex) => {
+            // Убедимся, что platform всегда массив
+            const platforms = Array.isArray(test.platform) ? test.platform : [test.platform];
+
+            const testCard = document.createElement('div');
+            testCard.className = 'test-card';
+            testCard.innerHTML = `
+                <h3>${test.name}</h3>
+                <p>${test.description}</p>
+                <p>Платформа: ${platforms.join(', ')}</p>
+                <button onclick="editTest(${testIndex}, '${project.id}')">Редактировать</button>
+                <button onclick="deleteTest(${testIndex}, '${project.id}')">Удалить</button>
+            `;
+            repositoryList.appendChild(testCard);
+        });
+    });
+}
 
 function loadRuns() {
     const runs = JSON.parse(localStorage.getItem('runs')) || [];
@@ -833,66 +858,6 @@ function exportData() {
     URL.revokeObjectURL(url);
 }
 
-function exportData() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const runs = JSON.parse(localStorage.getItem('runs')) || [];
-    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
-
-    const data = { projects, runs, archivedRuns };
-    const jsonData = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data-export.json';
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-function exportData() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const runs = JSON.parse(localStorage.getItem('runs')) || [];
-    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
-
-    const data = { projects, runs, archivedRuns };
-    const jsonData = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data-export.json';
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-function exportData() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const runs = JSON.parse(localStorage.getItem('runs')) || [];
-    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
-
-    const data = { projects, runs, archivedRuns };
-    const jsonData = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data-export.json';
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -924,6 +889,7 @@ function importData(event) {
                 loadProjects();
                 loadRuns();
                 loadArchiveRuns();
+                loadRepository(); // Обновляем страницу репозитория
             } else {
                 alert('Некорректная структура данных в JSON файле.');
             }
@@ -945,3 +911,4 @@ document.getElementById('import-file').addEventListener('change', importData);
 loadProjects();
 loadRuns();
 loadArchiveRuns();
+loadRepository();
