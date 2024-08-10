@@ -299,16 +299,51 @@ function loadTests() {
 
 function addTest() {
     const modal = document.getElementById('add-test-modal');
+    const platformTilesContainer = document.getElementById('test-platform-tiles');
+
+    if (!platformTilesContainer) {
+        console.error('Элемент с ID "test-platform-tiles" не найден в DOM.');
+        return;
+    }
+
+    // Получаем текущий проект и его платформы
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const currentProject = projects[currentProjectIndex];
+
+    if (!currentProject || !currentProject.platforms) {
+        console.error('Данные о текущем проекте или платформах отсутствуют.');
+        return;
+    }
+
+    // Очищаем старые плитки платформ
+    platformTilesContainer.innerHTML = '';
+
+    // Создаем плитки платформ для модального окна
+    const allPlatforms = ['web', 'android', 'ios']; // Все возможные платформы
+    allPlatforms.forEach(platform => {
+        const tile = document.createElement('div');
+        tile.className = 'platform-tile';
+        tile.setAttribute('data-platform', platform);
+        tile.textContent = capitalize(platform);
+        if (currentProject.platforms.includes(platform)) {
+            tile.classList.add('selected'); // Выделяем платформы проекта
+        }
+        tile.onclick = function() {
+            this.classList.toggle('selected');
+        };
+        platformTilesContainer.appendChild(tile);
+    });
+
     modal.style.display = 'block';
 
     const saveButton = document.getElementById('save-test-button');
     saveButton.onclick = function() {
         const nameInput = document.getElementById('test-name-input').value;
         const descriptionInput = document.getElementById('test-description-input').value;
-        const platformInput = document.getElementById('test-platform-input').value;
+        const selectedTiles = document.querySelectorAll('#test-platform-tiles .platform-tile.selected');
+        const platforms = Array.from(selectedTiles).map(tile => tile.getAttribute('data-platform'));
 
         const nameError = document.getElementById('test-name-error');
-        const descriptionError = document.getElementById('test-description-error');
         const platformError = document.getElementById('test-platform-error');
 
         let isValid = true;
@@ -321,29 +356,29 @@ function addTest() {
             nameError.style.display = 'none';
         }
 
-        if (!descriptionInput) {
-            descriptionError.textContent = 'Пожалуйста, введите описание теста.';
-            descriptionError.style.display = 'block';
-            isValid = false;
-        } else {
-            descriptionError.style.display = 'none';
-        }
-
-        if (!platformInput) {
-            platformError.textContent = 'Пожалуйста, введите платформу теста.';
-            platformError.style.display = 'block';
-            isValid = false;
+        // Теперь описание и платформы не обязательны
+        // Платформы не обязательны
+        if (platforms.length === 0) {
+            platformError.textContent = 'Платформы не выбраны.';
+            platformError.style.display = 'none'; // Убрали показ ошибки
         } else {
             platformError.style.display = 'none';
         }
 
         if (isValid) {
-            const projects = JSON.parse(localStorage.getItem('projects'));
-            projects[currentProjectIndex].tests.push({ name: nameInput, description: descriptionInput, platform: platformInput, status: 'unchecked' });
-            localStorage.setItem('projects', JSON.stringify(projects));
-            loadTests();
-            modal.style.display = 'none';
-            showToast('Case created successfully', 'success');
+            if (currentProjectIndex !== null && projects[currentProjectIndex]) {
+                projects[currentProjectIndex].tests.push({
+                    name: nameInput,
+                    description: descriptionInput, // Описание остается, даже если пустое
+                    platform: platforms, // Платформы могут быть пустыми
+                    status: 'unchecked'
+                });
+                localStorage.setItem('projects', JSON.stringify(projects));
+                loadTests(); // Обновите список тестов
+                modal.style.display = 'none';
+                clearTestModalFields();
+                showToast('Тест успешно добавлен', 'success');
+            }
         }
     };
 
@@ -367,22 +402,78 @@ function addTest() {
     };
 }
 
-function editTest(testIndex) {
-    const projects = JSON.parse(localStorage.getItem('projects'));
-    const test = projects[currentProjectIndex].tests[testIndex];
+function capitalize(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
 
+function clearTestModalFields() {
+    document.getElementById('test-name-input').value = '';
+    document.getElementById('test-description-input').value = '';
+    document.querySelectorAll('#test-platform-tiles .platform-tile').forEach(tile => tile.classList.remove('selected'));
+    document.getElementById('test-name-error').style.display = 'none';
+    document.getElementById('test-platform-error').style.display = 'none'; // Убрали очистку ошибки платформ
+}
+
+
+function editTest(testIndex) {
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const test = projects[currentProjectIndex]?.tests[testIndex];
+
+    if (!test) {
+        console.error('Тест не найден.');
+        return;
+    }
+
+    // Заполняем поля данными текущего теста
     document.getElementById('edit-test-name-input').value = test.name;
     document.getElementById('edit-test-description-input').value = test.description;
-    document.getElementById('edit-test-platform-input').value = test.platform;
 
     const modal = document.getElementById('edit-test-modal');
+    const platformTilesContainer = document.getElementById('edit-test-platform-tiles');
+
+    if (!modal || !platformTilesContainer) {
+        console.error('Не удалось найти модальное окно или контейнер плиток платформ.');
+        return;
+    }
+
+    // Очищаем старые плитки платформ
+    platformTilesContainer.innerHTML = '';
+
+    // Создаем плитки платформ для модального окна
+    const allPlatforms = ['web', 'android', 'ios']; // Все возможные платформы
+    allPlatforms.forEach(platform => {
+        const tile = document.createElement('div');
+        tile.className = 'platform-tile';
+        tile.setAttribute('data-platform', platform);
+        tile.textContent = capitalize(platform);
+
+        if (test.platform.includes(platform)) {
+            tile.classList.add('selected'); // Выделяем платформы теста
+        }
+
+        tile.onclick = function() {
+            this.classList.toggle('selected');
+        };
+
+        platformTilesContainer.appendChild(tile);
+    });
+
     modal.style.display = 'block';
 
     const saveButton = document.getElementById('save-edit-test-button');
+    const cancelButton = document.getElementById('cancel-edit-test-button');
+    const closeButton = document.getElementById('close-edit-test-button');
+
+    if (!saveButton || !cancelButton || !closeButton) {
+        console.error('Не удалось найти кнопки в модальном окне.');
+        return;
+    }
+
     saveButton.onclick = function() {
         const nameInput = document.getElementById('edit-test-name-input').value;
         const descriptionInput = document.getElementById('edit-test-description-input').value;
-        const platformInput = document.getElementById('edit-test-platform-input').value;
+        const selectedTiles = document.querySelectorAll('#edit-test-platform-tiles .platform-tile.selected');
+        const platforms = Array.from(selectedTiles).map(tile => tile.getAttribute('data-platform'));
 
         const nameError = document.getElementById('edit-test-name-error');
         const descriptionError = document.getElementById('edit-test-description-error');
@@ -398,40 +489,27 @@ function editTest(testIndex) {
             nameError.style.display = 'none';
         }
 
-        if (!descriptionInput) {
-            descriptionError.textContent = 'Пожалуйста, введите описание теста.';
-            descriptionError.style.display = 'block';
-            isValid = false;
-        } else {
-            descriptionError.style.display = 'none';
-        }
-
-        if (!platformInput) {
-            platformError.textContent = 'Пожалуйста, введите платформу теста.';
-            platformError.style.display = 'block';
-            isValid = false;
-        } else {
-            platformError.style.display = 'none';
-        }
+        // Теперь описание и платформы не обязательны
+        descriptionError.style.display = 'none';
+        platformError.style.display = 'none';
 
         if (isValid) {
             test.name = nameInput;
             test.description = descriptionInput;
-            test.platform = platformInput;
+            test.platform = platforms; // Обновляем платформы как массив
             localStorage.setItem('projects', JSON.stringify(projects));
-            loadTests();
+            loadTests(); // Обновите список тестов
             modal.style.display = 'none';
-            showToast('Case edited successfully', 'info');
+            clearEditTestModalFields();
+            showToast('Тест успешно обновлен', 'info');
         }
     };
 
-    const cancelButton = document.getElementById('cancel-edit-test-button');
     cancelButton.onclick = function() {
         modal.style.display = 'none';
         clearEditTestModalFields();
     };
 
-    const closeButton = document.getElementById('close-edit-test-button');
     closeButton.onclick = function() {
         modal.style.display = 'none';
         clearEditTestModalFields();
@@ -445,22 +523,17 @@ function editTest(testIndex) {
     };
 }
 
-function clearTestModalFields() {
-    document.getElementById('test-name-input').value = '';
-    document.getElementById('test-description-input').value = '';
-    document.getElementById('test-platform-input').value = '';
-    document.getElementById('test-name-error').textContent = '';
-    document.getElementById('test-description-error').textContent = '';
-    document.getElementById('test-platform-error').textContent = '';
-}
-
 function clearEditTestModalFields() {
     document.getElementById('edit-test-name-input').value = '';
     document.getElementById('edit-test-description-input').value = '';
-    document.getElementById('edit-test-platform-input').value = '';
+    document.querySelectorAll('#edit-test-platform-tiles .platform-tile').forEach(tile => tile.classList.remove('selected'));
     document.getElementById('edit-test-name-error').textContent = '';
     document.getElementById('edit-test-description-error').textContent = '';
     document.getElementById('edit-test-platform-error').textContent = '';
+}
+
+function capitalize(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 
