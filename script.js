@@ -11,10 +11,15 @@ function showPage(pageId) {
 
     document.getElementById(pageId).classList.remove('hidden');
 
+    if (pageId === 'projects') {
+        loadProjects();
+    }
     if (pageId === 'repository') {
         loadRepository(); // Загружаем тесты при открытии страницы репозитория
     }
+   
 }
+
 
 function refreshPage() {
     localStorage.clear();
@@ -24,10 +29,26 @@ function refreshPage() {
 function loadProjects() {
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
     const projectList = document.getElementById('project-list');
-    projectList.innerHTML = '';
+    projectList.innerHTML = ''; // Очистка списка перед обновлением
+
     projects.forEach((project, index) => {
-        const projectCard = createProjectCard(project, index);
-        projectList.appendChild(projectCard);
+        const projectElement = document.createElement('div');
+        projectElement.classList.add('project-card');
+        
+        // Получаем количество тестов
+        const testCount = project.tests ? project.tests.length : 0;
+        const testCountText = testCount > 0 ? `Количество тестов: ${testCount}` : 'Тесты отсутствуют';
+        
+        projectElement.innerHTML = `
+            <h2>${project.name}</h2>
+            <p>${project.description}</p>
+            <p>Платформы: ${project.platforms.join(', ')}</p>
+            <p>${testCountText}</p>
+            <button onclick="viewProject(${index})">Открыть</button>
+            <button onclick="editProject(${index})">Редактировать</button>
+            <button onclick="deleteProject(${index})">Удалить</button>
+        `;
+        projectList.appendChild(projectElement);
     });
 }
 
@@ -155,26 +176,6 @@ window.onload = function() {
     initializePlatformSelection();
 }
 
-function loadProjects() {
-    const projectList = document.getElementById('project-list');
-    projectList.innerHTML = ''; // Очистка списка перед обновлением
-
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    projects.forEach((project, index) => {
-        const projectElement = document.createElement('div');
-        projectElement.classList.add('project-card');
-        projectElement.innerHTML = `
-            <h2>${project.name}</h2>
-            <p>${project.description}</p>
-            <p>Платформы: ${project.platforms.join(', ')}</p>
-            <button onclick="viewProject(${index})">Открыть</button>
-            <button onclick="editProject(${index})">Редактировать</button>
-            <button onclick="deleteProject(${index})">Удалить</button>
-        `;
-        projectList.appendChild(projectElement);
-    });
-}
-
 function editProject(index) {
     const modal = document.getElementById('edit-project-modal');
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
@@ -268,14 +269,19 @@ function viewProject(index) {
     currentProjectIndex = index;
     const projects = JSON.parse(localStorage.getItem('projects'));
     const project = projects[index];
+    
+    if (!project) {
+        console.error('Проект не найден.');
+        return;
+    }
+    
     document.getElementById('project-name').textContent = project.name;
     document.getElementById('project-description').textContent = project.description;
     
-    // Формируем строку с платформами
     const platformText = project.platforms.length > 0 ? `Платформы: ${project.platforms.join(', ')}` : 'Платформы не выбраны';
     document.getElementById('project-platform').textContent = platformText;
     
-    loadTests();
+    loadTests(); // Загрузка тестов для текущего проекта
     showPage('project-detail');
 }
 
@@ -283,42 +289,47 @@ function selectProject(index) {
     currentProjectIndex = index;
     loadTests(); // Загрузить тесты для выбранного проекта
 }
+
 function loadTests() {
-    // Получаем проекты из localStorage
+    if (currentProjectIndex === null || currentProjectIndex === undefined) {
+        console.error('Текущий проект не установлен.');
+        return;
+    }
+
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    
-    // Получаем текущий проект
     const project = projects[currentProjectIndex];
-    
+
     if (!project) {
         console.error('Текущий проект не найден.');
         return;
     }
 
-    // Получаем элемент списка тестов
     const testList = document.getElementById('test-list');
+    const testCountElement = document.getElementById('test-count');
     testList.innerHTML = '';
 
-    // Проверяем наличие тестов в проекте
     if (!project.tests || project.tests.length === 0) {
         testList.innerHTML = '<p>Тесты отсутствуют.</p>';
+        testCountElement.textContent = '';
         return;
     }
 
-    // Создаем карточки для каждого теста
+    testCountElement.textContent = `Количество тестов: ${project.tests.length}`;
+
     project.tests.forEach((test, testIndex) => {
         const testCard = document.createElement('div');
         testCard.className = 'test-card';
         testCard.innerHTML = `
             <h3>${test.name}</h3>
             <p>${test.description}</p>
-            <p>Платформа: ${test.platform.join(', ')}</p> <!-- Убедитесь, что test.platform - это массив -->
+            <p>Платформа: ${test.platform.join(', ')}</p>
             <button onclick="editTest(${testIndex}, ${currentProjectIndex})">Редактировать</button>
             <button onclick="deleteTest(${testIndex}, ${currentProjectIndex})">Удалить</button>
         `;
         testList.appendChild(testCard);
     });
 }
+
 
 function addTest() {
     const modal = document.getElementById('add-test-modal');
@@ -377,15 +388,6 @@ function addTest() {
             isValid = false;
         } else {
             nameError.style.display = 'none';
-        }
-
-        // Теперь описание и платформы не обязательны
-        // Платформы не обязательны
-        if (platforms.length === 0) {
-            platformError.textContent = 'Платформы не выбраны.';
-            platformError.style.display = 'none'; // Убрали показ ошибки
-        } else {
-            platformError.style.display = 'none';
         }
 
         if (isValid) {
@@ -556,12 +558,38 @@ function updateTestInProjectDOM(testIndex, projectIndex, updatedTest) {
     }
 }
 
-function deleteTest(testIndex) {
+function deleteTest(testIndex, projectIndex) {
+    // Установка currentProjectIndex на индекс текущего проекта
+    currentProjectIndex = projectIndex;
+
+    // Проверка наличия проектов
     const projects = JSON.parse(localStorage.getItem('projects'));
-    projects[currentProjectIndex].tests.splice(testIndex, 1);
+    if (!projects || projectIndex >= projects.length) {
+        console.error('Индекс проекта некорректен или проект не найден.');
+        return;
+    }
+
+    // Получение текущего проекта
+    const project = projects[projectIndex];
+    
+    // Проверка наличия тестов и корректность индекса теста
+    if (!project.tests || testIndex >= project.tests.length) {
+        console.error('Тест не найден.');
+        return;
+    }
+
+    // Удаление теста
+    project.tests.splice(testIndex, 1);
     localStorage.setItem('projects', JSON.stringify(projects));
-    loadTests();
-    showToast('Case deleted successfully', 'warning');
+
+    // Обновление отображения тестов и репозитория
+    if (document.getElementById('project-detail')) {
+        loadTests(); // Обновляем тесты на странице проекта
+    }
+
+    loadRepository(); // Обновляем репозиторий на странице
+
+    showToast('Тест удален успешно', 'warning');
 }
 
 function createRun(projectName, testCount) {
@@ -593,22 +621,25 @@ function loadRepository() {
     repositoryList.innerHTML = ''; // Очистка предыдущего содержимого
 
     projects.forEach((project, projectIndex) => {
-        // Создание элемента для проекта
         const projectContainer = document.createElement('div');
         projectContainer.className = 'project-container';
 
-        // Добавление заголовка проекта
         const projectTitle = document.createElement('h2');
-        projectTitle.textContent = project.name; // или используйте другую переменную, если имя хранится по-другому
+        projectTitle.textContent = project.name;
         projectContainer.appendChild(projectTitle);
 
-        // Проверка наличия тестов и их отображение
+        const testCount = project.tests ? project.tests.length : 0;
+        const testCountText = testCount > 0 ? `Количество тестов: ${testCount}` : 'Тесты отсутствуют';
+        
+        const testCountElement = document.createElement('p');
+        testCountElement.textContent = testCountText;
+        projectContainer.appendChild(testCountElement);
+
         if (project.tests && project.tests.length > 0) {
             const testList = document.createElement('div');
             testList.className = 'test-list';
 
             project.tests.forEach((test, testIndex) => {
-                // Убедимся, что platform всегда массив
                 const platforms = Array.isArray(test.platform) ? test.platform : [test.platform];
 
                 const testCard = document.createElement('div');
@@ -625,10 +656,7 @@ function loadRepository() {
 
             projectContainer.appendChild(testList);
         } else {
-            // Сообщение о том, что тестов нет
-            const noTestsMessage = document.createElement('p');
-            noTestsMessage.textContent = 'Нет тестов для этого проекта.';
-            projectContainer.appendChild(noTestsMessage);
+            `Количество тестов: ${testCount}`
         }
 
         repositoryList.appendChild(projectContainer);
@@ -878,26 +906,6 @@ function exportData() {
 }
 document.getElementById('export-button').addEventListener('click', exportData);
 
-function exportData() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const runs = JSON.parse(localStorage.getItem('runs')) || [];
-    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
-
-    const data = { projects, runs, archivedRuns };
-    const jsonData = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data-export.json';
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -924,6 +932,9 @@ function importData(event) {
                 localStorage.setItem('archivedRuns', JSON.stringify(newArchivedRuns));
 
                 alert('Данные успешно импортированы!');
+
+                // Сброс текущего проекта
+                currentProjectIndex = null;
 
                 // Обновляем отображение проектов, прогонов и архивов
                 loadProjects();
