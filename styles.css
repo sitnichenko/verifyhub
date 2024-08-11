@@ -31,7 +31,7 @@ body {
     text-decoration: none;
     color: #333;
     display: block;
-    width: calc(100% + 50px);
+    width: calc(100% + 30px);
     text-align: left;
     transition: background-color 0.3s ease, border-radius 0.3s ease, padding-left 0.3s ease;
     border-radius: 5px;
@@ -41,7 +41,7 @@ body {
 .sidebar a:hover {
     background-color: #e2e6ea;
     border-radius: 10px;
-    width: calc(100% + 50px);
+    width: calc(100% + 30px);
     margin: 5px 0;
 }
 
