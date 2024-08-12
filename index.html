@@ -43,13 +43,38 @@
         </div>
         
         <div id="project-detail" class="page hidden">
-            <h1 id="project-name"></h1>
-            <p id="project-description"></p>
-            <p id="project-platform"></p>
-            <p id="test-count"></p>
-            <div id="test-list"></div>
-            <button class="custom-button" onclick="addTest()">Добавить тест</button>
-            <button class="custom-button" onclick="showPage('projects')">Назад к проектам</button>
+            <div class="content-container">
+                <!-- Вертикальный блок с папками -->
+                <div class="folders-sidebar">
+                    <h2>Папки</h2>
+                    <div class="folder" draggable="true">
+                        <span>Folder 1</span>
+                        <div class="case">
+                            <span>Test Case 1</span>
+                        </div>
+                        <div class="case">
+                            <span>Test Case 2</span>
+                        </div>
+                    </div>
+                    <div class="folder" draggable="true">
+                        <span>Folder 2</span>
+                        <div class="case">
+                            <span>Test Case 3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Остальные данные -->
+                <div class="project-details">
+                    <h1 id="project-name"></h1>
+                    <p id="project-description"></p>
+                    <p id="project-platform"></p>
+                    <p id="test-count"></p>
+                    <div id="test-list"></div>
+                    <button class="custom-button" onclick="addTest()">Добавить тест</button>
+                    <button class="custom-button" onclick="showPage('projects')">Назад к проектам</button>
+                </div>
+            </div>
         </div>
 
         <div id="add-project" class="page hidden">
@@ -58,8 +83,33 @@
         </div>
 
         <div id="repository" class="page hidden">
-            <h1>Репозиторий тестов</h1>
-            <div id="repository-list"></div>
+            <div class="content-container">
+                <!-- Вертикальный блок с папками -->
+                <div class="folders-sidebar">
+                    <h2>Папки</h2>
+                    <div class="folder" draggable="true">
+                        <span>Folder 1</span>
+                        <div class="case">
+                            <span>Test Case 1</span>
+                        </div>
+                        <div class="case">
+                            <span>Test Case 2</span>
+                        </div>
+                    </div>
+                    <div class="folder" draggable="true">
+                        <span>Folder 2</span>
+                        <div class="case">
+                            <span>Test Case 3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Остальные данные -->
+                <div class="repository-details">
+                    <h1>Репозиторий тестов</h1>
+                    <div id="repository-list"></div>
+                </div>
+            </div>
         </div>
         
         <div id="runs" class="page hidden">
@@ -105,87 +155,87 @@
     </div>
 
     <!-- Модальное окно для редактирования проекта -->
-<div id="edit-project-modal" class="modal">
-    <div class="modal-content">
-        <span id="close-edit-project-button" class="close">&times;</span>
-        <h2>Редактировать проект</h2>
-        <div>
-            <input type="text" id="edit-project-name-input" placeholder="Введите название проекта">
-            <span id="edit-project-name-error" class="error-message"></span>
-        </div>
-        <div>
-            <textarea id="edit-project-description-input" placeholder="Введите описание проекта"></textarea>
-            <span id="edit-project-description-error" class="error-message"></span>
-        </div>
-        <div>
-            <p>Платформы:</p>
-            <div class="platform-tiles">
-                <div class="platform-tile" data-platform="web">Web</div>
-                <div class="platform-tile" data-platform="android">Android</div>
-                <div class="platform-tile" data-platform="ios">iOS</div>
+    <div id="edit-project-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-edit-project-button" class="close">&times;</span>
+            <h2>Редактировать проект</h2>
+            <div>
+                <input type="text" id="edit-project-name-input" placeholder="Введите название проекта">
+                <span id="edit-project-name-error" class="error-message"></span>
+            </div>
+            <div>
+                <textarea id="edit-project-description-input" placeholder="Введите описание проекта"></textarea>
+                <span id="edit-project-description-error" class="error-message"></span>
+            </div>
+            <div>
+                <p>Платформы:</p>
+                <div class="platform-tiles">
+                    <div class="platform-tile" data-platform="web">Web</div>
+                    <div class="platform-tile" data-platform="android">Android</div>
+                    <div class="platform-tile" data-platform="ios">iOS</div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="custom-button" id="save-edit-project-button">Сохранить</button>
+                <button class="custom-button" id="cancel-edit-project-button">Отмена</button>
             </div>
         </div>
-        <div class="modal-buttons">
-        <button class="custom-button" id="save-edit-project-button">Сохранить</button>
-        <button class="custom-button" id="cancel-edit-project-button">Отмена</button>
     </div>
-</div>
-</div>
 
-<!-- Модальное окно для добавления теста -->
-<div id="add-test-modal" class="modal">
-    <div class="modal-content">
-        <span id="close-add-test-button" class="close">&times;</span>
-        <h2>Добавить тест</h2>
-        <div>
-            <input type="text" id="test-name-input" placeholder="Введите название теста">
-            <span id="test-name-error" class="error-message"></span>
-        </div>
-        <div>
-            <textarea id="test-description-input" placeholder="Введите описание теста"></textarea>
-            <span id="test-description-error" class="error-message"></span>
-        </div>
-        <div>
-            <p>Платформы:</p>
-            <div id="test-platform-tiles" class="platform-tiles">
-                <!-- Плитки платформ будут динамически добавляться сюда -->
+
+    <!-- Модальное окно для добавления теста -->
+    <div id="add-test-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-add-test-button" class="close">&times;</span>
+            <h2>Добавить тест</h2>
+            <div>
+                <input type="text" id="test-name-input" placeholder="Введите название теста">
+                <span id="test-name-error" class="error-message"></span>
             </div>
-            <span id="test-platform-error" class="error-message"></span>
-        </div>
-        <div class="modal-buttons">
-            <button class="custom-button" id="save-test-button">Сохранить</button>
-            <button class="custom-button" id="cancel-test-button">Отмена</button>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для редактирования теста -->
-<div id="edit-test-modal" class="modal">
-    <div class="modal-content">
-        <span id="close-edit-test-button" class="close">&times;</span>
-        <h2>Редактировать тест</h2>
-        <div>
-            <input type="text" id="edit-test-name-input" placeholder="Введите название теста">
-            <span id="edit-test-name-error" class="error-message"></span>
-        </div>
-        <div>
-            <textarea id="edit-test-description-input" placeholder="Введите описание теста"></textarea>
-            <span id="edit-test-description-error" class="error-message"></span>
-        </div>
-        <div>
-            <p>Платформы:</p>
-            <div id="edit-test-platform-tiles" class="platform-tiles">
-                <!-- Плитки платформ будут динамически добавляться сюда -->
+            <div>
+                <textarea id="test-description-input" placeholder="Введите описание теста"></textarea>
+                <span id="test-description-error" class="error-message"></span>
             </div>
-            <span id="edit-test-platform-error" class="error-message"></span>
-        </div>
-        <div class="modal-buttons">
-            <button class="custom-button" id="save-edit-test-button">Сохранить</button>
-            <button class="custom-button" id="cancel-edit-test-button">Отмена</button>
+            <div>
+                <p>Платформы:</p>
+                <div id="test-platform-tiles" class="platform-tiles">
+                    <!-- Плитки платформ будут динамически добавляться сюда -->
+                </div>
+                <span id="test-platform-error" class="error-message"></span>
+            </div>
+            <div class="modal-buttons">
+                <button class="custom-button" id="save-test-button">Сохранить</button>
+                <button class="custom-button" id="cancel-test-button">Отмена</button>
+            </div>
         </div>
     </div>
-</div>
 
+    <!-- Модальное окно для редактирования теста -->
+    <div id="edit-test-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-edit-test-button" class="close">&times;</span>
+            <h2>Редактировать тест</h2>
+            <div>
+                <input type="text" id="edit-test-name-input" placeholder="Введите название теста">
+                <span id="edit-test-name-error" class="error-message"></span>
+            </div>
+            <div>
+                <textarea id="edit-test-description-input" placeholder="Введите описание теста"></textarea>
+                <span id="edit-test-description-error" class="error-message"></span>
+            </div>
+            <div>
+                <p>Платформы:</p>
+                <div id="edit-test-platform-tiles" class="platform-tiles">
+                    <!-- Плитки платформ будут динамически добавляться сюда -->
+                </div>
+                <span id="edit-test-platform-error" class="error-message"></span>
+            </div>
+            <div class="modal-buttons">
+                <button class="custom-button" id="save-edit-test-button">Сохранить</button>
+                <button class="custom-button" id="cancel-edit-test-button">Отмена</button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
