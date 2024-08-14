@@ -1,11 +1,66 @@
-let currentProjectIndex = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadProjects();
-    showPage('dashboard');
+    // Проверка авторизации при загрузке страницы
+    if (!isAuthenticated()) {
+        showPage('login-page');
+    } else {
+        showPage('dashboard');
+    }
+
+    // Добавление обработчика события для формы входа
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', login);
+    } else {
+        console.error('Element with id="login-form" not found.');
+    }
 });
 
+const USERNAME = '1';
+const PASSWORD = '1';
+
+function isAuthenticated() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return false;
+
+    const tokenExpiration = localStorage.getItem('authTokenExpiration');
+    const currentTime = new Date().getTime();
+    return tokenExpiration && currentTime < tokenExpiration;
+}
+
+function login(event) {
+    event.preventDefault();
+
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const loginError = document.getElementById('login-error');
+
+    if (username === USERNAME && password === PASSWORD) {
+        const token = 'exampleToken';
+        const expirationTime = new Date().getTime() + 10800000; // 3 часа
+
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('authTokenExpiration', expirationTime);
+
+        showPage('dashboard');
+    } else {
+        loginError.textContent = 'Неверный логин или пароль.';
+    }
+}
+
 function showPage(pageId) {
+    const mainContent = document.getElementById('main-content');
+    const loginPage = document.getElementById('login-page');
+
+    if (!isAuthenticated() && pageId !== 'login-page') {
+        mainContent.style.display = 'none';
+        loginPage.style.display = 'flex';
+        return;
+    }
+
+    mainContent.style.display = 'block';
+    loginPage.style.display = 'none';
+
     const pages = document.querySelectorAll('.page');
     pages.forEach(page => page.classList.add('hidden'));
 
@@ -15,9 +70,8 @@ function showPage(pageId) {
         loadProjects();
     }
     if (pageId === 'repository') {
-        loadRepository(); // Загружаем тесты при открытии страницы репозитория
+        loadRepository();
     }
-   
 }
 
 
