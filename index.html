@@ -15,6 +15,7 @@
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div>
+            <a href="#" onclick="showPage('account')">Account</a>
             <a href="#" onclick="showPage('dashboard')">Dashboard</a>
             <a href="#" onclick="showPage('projects')">Projects</a>
             <a href="#" onclick="showPage('repository')">Repository</a> 
@@ -32,7 +33,13 @@
 
     <!-- Container -->
     <div class="container">
-        <div id="dashboard" class="page">
+
+        <div id="account" class="page hidden">
+            <h1>Управление аккаунтом</h1>
+            <button id="logout-button" class="custom-button">Выйти из аккаунта</button>
+        </div>
+
+        <div id="dashboard" class="page hidden">
             <h1>Дашборд</h1>
             <p>Тут пока ничего нет.</p>
         </div>

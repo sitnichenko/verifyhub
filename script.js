@@ -1,20 +1,31 @@
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Получаем последнюю сохраненную страницу из localStorage
+    const savedPage = localStorage.getItem('currentPage');
+
     // Проверка авторизации при загрузке страницы
     if (!isAuthenticated()) {
         showPage('login-page');
     } else {
-        showPage('dashboard');
+        // Если страница сохранена, показываем её, иначе показываем дашборд
+        if (savedPage) {
+            showPage(savedPage);
+        } else {
+            showPage('dashboard');
+        }
     }
 
-    // Добавление обработчика события для формы входа
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', login);
-    } else {
-        console.error('Element with id="login-form" not found.');
+    }
+
+    const logoutButton = document.getElementById('logout-button');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', logout);
     }
 });
+
 
 const USERNAME = '1';
 const PASSWORD = '1';
@@ -35,7 +46,7 @@ function login(event) {
     const password = document.getElementById('password').value;
     const loginError = document.getElementById('login-error');
 
-    if (username === USERNAME && password === PASSWORD) {
+    if (username === '1' && password === '1') {
         const token = 'exampleToken';
         const expirationTime = new Date().getTime() + 10800000; // 3 часа
 
@@ -48,36 +59,49 @@ function login(event) {
     }
 }
 
+function logout() {
+    // Удаляем токен и данные авторизации
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authTokenExpiration');
+    localStorage.removeItem('currentPage'); // Удаляем сохраненную страницу
+
+    // Перенаправляем на страницу авторизации
+    showPage('login-page');
+}
+
+
 function showPage(pageId) {
     const mainContent = document.getElementById('main-content');
     const loginPage = document.getElementById('login-page');
 
-    if (!isAuthenticated() && pageId !== 'login-page') {
+    if (pageId === 'login-page') {
+        // Если это страница авторизации, скрываем основной контент
         mainContent.style.display = 'none';
         loginPage.style.display = 'flex';
+        localStorage.removeItem('currentPage'); // Очищаем сохраненную страницу
         return;
     }
 
+    // Если пользователь не авторизован и пытается попасть на другую страницу, кроме авторизации, перенаправляем на авторизацию
+    if (!isAuthenticated()) {
+        showPage('login-page');
+        return;
+    }
+
+    // Отображаем основной контент и скрываем страницу авторизации
     mainContent.style.display = 'block';
     loginPage.style.display = 'none';
 
     const pages = document.querySelectorAll('.page');
-    pages.forEach(page => page.classList.add('hidden'));
+    pages.forEach(page => {
+        page.style.display = 'none';
+    });
 
-    document.getElementById(pageId).classList.remove('hidden');
-
-    if (pageId === 'projects') {
-        loadProjects();
+    const currentPage = document.getElementById(pageId);
+    if (currentPage) {
+        currentPage.style.display = 'block'; // Показываем нужную страницу
+        localStorage.setItem('currentPage', pageId); // Сохраняем текущую страницу
     }
-    if (pageId === 'repository') {
-        loadRepository();
-    }
-}
-
-
-function refreshPage() {
-    localStorage.clear();
-    location.reload();
 }
 
 function loadProjects() {
@@ -982,7 +1006,7 @@ function loadArchiveRuns() {
 document.addEventListener('DOMContentLoaded', () => {
     loadProjects();
     loadArchiveRuns();
-    showPage('dashboard');
+    showPage(savedPage);
 
     // Инициализация модальных окон для добавления и редактирования тестов
     document.getElementById('add-test-modal').style.display = 'none';
@@ -1107,3 +1131,9 @@ loadProjects();
 loadRuns();
 loadArchiveRuns();
 loadRepository();
+
+
+function refreshPage() {
+    localStorage.clear();
+    location.reload();
+}
