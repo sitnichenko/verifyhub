@@ -52,19 +52,42 @@ function loadProjects() {
     });
 }
 
-function createProjectCard(project, index) {
-    const projectCard = document.createElement('div');
-    projectCard.className = 'project-card';
-    projectCard.innerHTML = `
-        <h2>${project.name}</h2>
-        <p>${project.description}</p>
-        <p>Платформы: ${project.platforms.length > 0 ? project.platforms.join(', ') : 'Не выбраны'}</p>
-        <button onclick="viewProject(${index})">Открыть</button>
-        <button onclick="editProject(${index})">Редактировать</button>
-        <button onclick="deleteProject(${index})">Удалить</button>
-    `;
-    return projectCard;
+function createProject() {
+    const projectName = document.getElementById('project-name-input').value;
+    const projectDescription = document.getElementById('project-description-input').value;
+    const projectPlatforms = []; // Замените на вашу логику получения платформ
+
+    if (!projectName) {
+        console.error('Название проекта не указано.');
+        return;
+    }
+
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+    // Создание начальной папки
+    const initialFolder = {
+        id: 'untitled-folder-' + new Date().getTime(),
+        name: 'Untitled',
+        cases: [] // Инициализация как массив
+    };
+
+    const project = {
+        name: projectName,
+        description: projectDescription,
+        platforms: projectPlatforms,
+        tests: [],
+        folders: [initialFolder] // Инициализация как массив
+    };
+
+    projects.push(project);
+
+    localStorage.setItem('projects', JSON.stringify(projects));
+
+    loadProjects(); // Обновите список проектов
+    loadRepository(); // Обновите список репозитория
 }
+
+
 
 // Функция инициализации обработчиков кликов для плиток платформ (вызывается один раз)
 function initializePlatformSelection() {
@@ -290,6 +313,7 @@ function selectProject(index) {
     loadTests(); // Загрузить тесты для выбранного проекта
 }
 
+// Функция для загрузки тестов в карточку проекта и папки
 function loadTests() {
     if (currentProjectIndex === null || currentProjectIndex === undefined) {
         console.error('Текущий проект не установлен.');
@@ -306,7 +330,11 @@ function loadTests() {
 
     const testList = document.getElementById('test-list');
     const testCountElement = document.getElementById('test-count');
+    const folderCaseContainers = document.querySelectorAll('.case-container');
+
     testList.innerHTML = '';
+
+    folderCaseContainers.forEach(container => container.innerHTML = ''); // Очистка контейнеров
 
     if (!project.tests || project.tests.length === 0) {
         testList.innerHTML = '<p>Тесты отсутствуют.</p>';
@@ -317,6 +345,7 @@ function loadTests() {
     testCountElement.textContent = `Количество тестов: ${project.tests.length}`;
 
     project.tests.forEach((test, testIndex) => {
+        // Создание карточки теста
         const testCard = document.createElement('div');
         testCard.className = 'test-card';
         testCard.innerHTML = `
@@ -327,6 +356,17 @@ function loadTests() {
             <button onclick="deleteTest(${testIndex}, ${currentProjectIndex})">Удалить</button>
         `;
         testList.appendChild(testCard);
+
+        // Обновление папок
+        project.folders.forEach(folder => {
+            const folderCaseContainer = document.getElementById(`folder-${folder.id}-cases`);
+            if (folderCaseContainer) {
+                const caseElement = document.createElement('div');
+                caseElement.className = 'case';
+                caseElement.innerHTML = `<span>${test.name}</span>`;
+                folderCaseContainer.appendChild(caseElement);
+            }
+        });
     });
 }
 
@@ -340,27 +380,24 @@ function addTest() {
         return;
     }
 
-    // Получаем текущий проект и его платформы
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
     const currentProject = projects[currentProjectIndex];
 
-    if (!currentProject || !currentProject.platforms) {
+    if (!currentProject || !Array.isArray(currentProject.platforms)) {
         console.error('Данные о текущем проекте или платформах отсутствуют.');
         return;
     }
 
-    // Очищаем старые плитки платформ
     platformTilesContainer.innerHTML = '';
 
-    // Создаем плитки платформ для модального окна
-    const allPlatforms = ['web', 'android', 'ios']; // Все возможные платформы
+    const allPlatforms = ['web', 'android', 'ios'];
     allPlatforms.forEach(platform => {
         const tile = document.createElement('div');
         tile.className = 'platform-tile';
         tile.setAttribute('data-platform', platform);
         tile.textContent = capitalize(platform);
         if (currentProject.platforms.includes(platform)) {
-            tile.classList.add('selected'); // Выделяем платформы проекта
+            tile.classList.add('selected');
         }
         tile.onclick = function() {
             this.classList.toggle('selected');
@@ -392,12 +429,39 @@ function addTest() {
 
         if (isValid) {
             if (currentProjectIndex !== null && projects[currentProjectIndex]) {
-                projects[currentProjectIndex].tests.push({
+                const project = projects[currentProjectIndex];
+
+                if (!Array.isArray(project.folders)) {
+                    console.error('Свойство folders должно быть массивом.');
+                    project.folders = [];
+                }
+
+                if (project.folders.length === 0) {
+                    // Создание начальной папки, если нет папок
+                    const initialFolder = {
+                        id: 'untitled-folder-' + new Date().getTime(),
+                        name: 'Untitled',
+                        cases: []
+                    };
+                    project.folders.push(initialFolder);
+                }
+
+                // Добавление теста в проект
+                project.tests.push({
                     name: nameInput,
-                    description: descriptionInput, // Описание остается, даже если пустое
-                    platform: platforms, // Платформы могут быть пустыми
+                    description: descriptionInput,
+                    platform: platforms,
                     status: 'unchecked'
                 });
+
+                // Добавление теста в первую папку
+                if (project.folders.length > 0) {
+                    const folder = project.folders[0]; // Выберите нужную папку
+                    folder.cases.push({
+                        name: nameInput
+                    });
+                }
+
                 localStorage.setItem('projects', JSON.stringify(projects));
                 loadTests(); // Обновите список тестов
                 modal.style.display = 'none';
@@ -427,6 +491,8 @@ function addTest() {
     };
 }
 
+
+
 function capitalize(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
@@ -436,7 +502,7 @@ function clearTestModalFields() {
     document.getElementById('test-description-input').value = '';
     document.querySelectorAll('#test-platform-tiles .platform-tile').forEach(tile => tile.classList.remove('selected'));
     document.getElementById('test-name-error').style.display = 'none';
-    document.getElementById('test-platform-error').style.display = 'none'; // Убрали очистку ошибки платформ
+    document.getElementById('test-platform-error').style.display = 'none';
 }
 
 
@@ -662,6 +728,30 @@ function loadRepository() {
         repositoryList.appendChild(projectContainer);
     });
 }
+
+function updateFolderView() {
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const project = projects[currentProjectIndex];
+
+    if (!project || !project.folders) return;
+
+    // Очистка существующих папок
+    const folderContainers = document.querySelectorAll('.folder');
+    folderContainers.forEach(container => container.querySelector('.case-container').innerHTML = '');
+
+    project.folders.forEach(folder => {
+        const folderContainer = document.getElementById(`folder-${folder.id}-cases`);
+        if (folderContainer) {
+            folder.cases.forEach(folderTest => {
+                const caseElement = document.createElement('div');
+                caseElement.className = 'case';
+                caseElement.innerHTML = `<span>${folderTest.name}</span>`;
+                folderContainer.appendChild(caseElement);
+            });
+        }
+    });
+}
+
 
 function loadRuns() {
     const runs = JSON.parse(localStorage.getItem('runs')) || [];
