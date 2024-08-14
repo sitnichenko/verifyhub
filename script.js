@@ -1,3 +1,6 @@
+import { isAuthenticated, login, logout, } from './auth.js';
+import { generateId, createProject, createProjectold, deleteProject, deleteProjectold, updateProject, loadProjects, loadArchiveRuns, addProject, updateProjectList } from './dataManager.js';
+import { showPage, openModal, closeModal, resetForm, showToast, initializePlatformSelection, toggleTileSelection, refreshPage } from './uiManager.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Получаем последнюю сохраненную страницу из localStorage
@@ -26,255 +29,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
-const USERNAME = '1';
-const PASSWORD = '1';
-
-function isAuthenticated() {
-    const token = localStorage.getItem('authToken');
-    if (!token) return false;
-
-    const tokenExpiration = localStorage.getItem('authTokenExpiration');
-    const currentTime = new Date().getTime();
-    return tokenExpiration && currentTime < tokenExpiration;
-}
-
-function login(event) {
-    event.preventDefault();
-
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const loginError = document.getElementById('login-error');
-
-    if (username === '1' && password === '1') {
-        const token = 'exampleToken';
-        const expirationTime = new Date().getTime() + 10800000; // 3 часа
-
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('authTokenExpiration', expirationTime);
-
-        showPage('dashboard');
-    } else {
-        loginError.textContent = 'Неверный логин или пароль.';
-    }
-}
-
-function logout() {
-    // Удаляем токен и данные авторизации
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('authTokenExpiration');
-    localStorage.removeItem('currentPage'); // Удаляем сохраненную страницу
-
-    // Перенаправляем на страницу авторизации
-    showPage('login-page');
-}
-
-
-function showPage(pageId) {
-    const mainContent = document.getElementById('main-content');
-    const loginPage = document.getElementById('login-page');
-
-    if (pageId === 'login-page') {
-        // Если это страница авторизации, скрываем основной контент
-        mainContent.style.display = 'none';
-        loginPage.style.display = 'flex';
-        localStorage.removeItem('currentPage'); // Очищаем сохраненную страницу
-        return;
-    }
-
-    // Если пользователь не авторизован и пытается попасть на другую страницу, кроме авторизации, перенаправляем на авторизацию
-    if (!isAuthenticated()) {
-        showPage('login-page');
-        return;
-    }
-
-    // Отображаем основной контент и скрываем страницу авторизации
-    mainContent.style.display = 'block';
-    loginPage.style.display = 'none';
-
-    const pages = document.querySelectorAll('.page');
-    pages.forEach(page => {
-        page.style.display = 'none';
-    });
-
-    const currentPage = document.getElementById(pageId);
-    if (currentPage) {
-        currentPage.style.display = 'block'; // Показываем нужную страницу
-        localStorage.setItem('currentPage', pageId); // Сохраняем текущую страницу
-    }
-}
-
-function loadProjects() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const projectList = document.getElementById('project-list');
-    projectList.innerHTML = ''; // Очистка списка перед обновлением
-
-    projects.forEach((project, index) => {
-        const projectElement = document.createElement('div');
-        projectElement.classList.add('project-card');
-        
-        // Получаем количество тестов
-        const testCount = project.tests ? project.tests.length : 0;
-        const testCountText = testCount > 0 ? `Количество тестов: ${testCount}` : 'Тесты отсутствуют';
-        
-        projectElement.innerHTML = `
-            <h2>${project.name}</h2>
-            <p>${project.description}</p>
-            <p>Платформы: ${project.platforms.join(', ')}</p>
-            <p>${testCountText}</p>
-            <button onclick="viewProject(${index})">Открыть</button>
-            <button onclick="editProject(${index})">Редактировать</button>
-            <button onclick="deleteProject(${index})">Удалить</button>
-        `;
-        projectList.appendChild(projectElement);
-    });
-}
-
-function createProject() {
-    const projectName = document.getElementById('project-name-input').value;
-    const projectDescription = document.getElementById('project-description-input').value;
-    const projectPlatforms = []; // Замените на вашу логику получения платформ
-
-    if (!projectName) {
-        console.error('Название проекта не указано.');
-        return;
-    }
-
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-
-    // Создание начальной папки
-    const initialFolder = {
-        id: 'untitled-folder-' + new Date().getTime(),
-        name: 'Untitled',
-        cases: [] // Инициализация как массив
-    };
-
-    const project = {
-        name: projectName,
-        description: projectDescription,
-        platforms: projectPlatforms,
-        tests: [],
-        folders: [initialFolder] // Инициализация как массив
-    };
-
-    projects.push(project);
-
-    localStorage.setItem('projects', JSON.stringify(projects));
-
-    loadProjects(); // Обновите список проектов
-    loadRepository(); // Обновите список репозитория
-}
-
-
-
-// Функция инициализации обработчиков кликов для плиток платформ (вызывается один раз)
-function initializePlatformSelection() {
-    const platformTiles = document.querySelectorAll('.platform-tile');
-    platformTiles.forEach(tile => {
-        tile.addEventListener('click', toggleTileSelection);
-    });
-}
-
-// Функция для переключения выбора плитки платформ
-function toggleTileSelection() {
-    this.classList.toggle('selected');
-}
-
-function addProject() {
-    const modal = document.getElementById('add-project-modal');
-    modal.style.display = 'block';
-
-    // Сбрасываем состояние платформ при открытии модального окна
-    resetForm();
+document.addEventListener('DOMContentLoaded', () => {
+    initializePlatformSelection();
+    loadProjectsAndRender();
 
     const saveButton = document.getElementById('save-project-button');
-    saveButton.onclick = function() {
+    saveButton.addEventListener('click', () => {
         const nameInput = document.getElementById('project-name-input').value;
         const descriptionInput = document.getElementById('project-description-input').value;
         const platforms = Array.from(document.querySelectorAll('.platform-tile.selected')).map(tile => tile.getAttribute('data-platform'));
-        const nameError = document.getElementById('project-name-error');
-        const descriptionError = document.getElementById('project-description-error');
 
-        let isValid = true;
-
-        // Проверяем поле ввода имени проекта
         if (!nameInput) {
-            nameError.textContent = 'Пожалуйста, введите название проекта.';
-            nameError.style.display = 'block';
-            isValid = false;
-        } else {
-            nameError.style.display = 'none';
+            document.getElementById('project-name-error').textContent = 'Пожалуйста, введите название проекта.';
+            return;
         }
 
-        // Если все поля заполнены, сохраняем проект
-        if (isValid) {
-            const projects = JSON.parse(localStorage.getItem('projects')) || [];
-            projects.push({ name: nameInput, description: descriptionInput, platforms: platforms, tests: [] });
-            localStorage.setItem('projects', JSON.stringify(projects));
-            loadProjects();
-            showPage('projects');
-            resetForm(); // Сброс формы
-            modal.style.display = 'none';
-            showToast('Проект успешно создан', 'success');
-        }
-    };
+        createProject(nameInput, descriptionInput, platforms);
+        loadProjectsAndRender();
+        closeModal('add-project-modal');
+        showToast('Проект успешно создан', 'success');
+    });
 
-    // Обработчик события для кнопки "Отмена" в модальном окне
     const cancelButton = document.getElementById('cancel-project-button');
-    cancelButton.onclick = function() {
-        resetForm(); // Сброс формы
-        modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
-    };
+    cancelButton.addEventListener('click', () => {
+        closeModal('add-project-modal');
+    });
 
-    // Обработчик события для кнопки закрытия модального окна (крестик)
     const closeButton = document.getElementById('close-project-button');
-    closeButton.onclick = function() {
-        resetForm(); // Сброс формы
-        modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
-    };
+    closeButton.addEventListener('click', () => {
+        closeModal('add-project-modal');
+    });
 
-    // Обработчик события для клика вне модального окна (закрывает окно)
-    window.onclick = function(event) {
+    window.addEventListener('click', (event) => {
+        const modal = document.getElementById('add-project-modal');
         if (event.target === modal) {
-            resetForm(); // Сброс формы
-            modal.style.display = 'none'; // Скрытие модального окна без сохранения данных
+            closeModal('add-project-modal');
         }
-    };
-}
-
-// Функция для сброса формы
-function resetForm() {
-    // Очищаем поля ввода
-    document.getElementById('project-name-input').value = '';
-    document.getElementById('project-description-input').value = '';
-
-    // Сбрасываем состояние плиток платформ
-    const platformTiles = document.querySelectorAll('.platform-tile');
-    platformTiles.forEach(tile => {
-        tile.classList.remove('selected');
     });
+});
 
-    // Очищаем текст ошибок
-    document.getElementById('project-name-error').textContent = '';
-    document.getElementById('project-description-error').textContent = '';
-}
-
-// Функция инициализации обработчиков кликов для плиток платформ (вызывается один раз)
-function initializePlatformSelection() {
-    const platformTiles = document.querySelectorAll('.platform-tile');
-    platformTiles.forEach(tile => {
-        tile.addEventListener('click', toggleTileSelection);
-    });
-}
-
-// Функция для переключения выбора плитки платформ
-function toggleTileSelection() {
-    this.classList.toggle('selected');
-}
-
-// Вызываем инициализацию обработчиков плиток платформ один раз при загрузке страницы
-window.onload = function() {
-    initializePlatformSelection();
+function loadProjectsAndRender() {
+    const projects = loadProjects();
+    updateProjectList(projects);
+    window.loadProjectsAndRender = loadProjectsAndRender;
 }
 
 function editProject(index) {
@@ -356,14 +153,6 @@ function editProject(index) {
     };
 }
 
-
-function deleteProject(index) {
-    const projects = JSON.parse(localStorage.getItem('projects'));
-    projects.splice(index, 1);
-    localStorage.setItem('projects', JSON.stringify(projects));
-    loadProjects();
-    showToast('Проект успешно удалён', 'warning');
-}
 
 
 function viewProject(index) {
@@ -974,35 +763,6 @@ function finishRun(runIndex) {
     loadArchiveRuns();
 }
 
-function loadArchiveRuns() {
-    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
-    const archiveList = document.getElementById('archive-list');
-    archiveList.innerHTML = '';
-    archivedRuns.forEach((run, index) => {
-        const runCard = document.createElement('div');
-        runCard.className = 'run-card';
-        runCard.innerHTML = `
-            <h2>${run.projectName}</h2>
-            <div>
-                ${run.tests.map((test, testIndex) => `
-                    <div class="test-card ${test.status}">
-                        <h3>${test.name}</h3>
-                        <p>${test.description}</p>
-                        <p>Платформа: ${test.platform}</p>
-                        <select disabled>
-                            <option value="unchecked" ${test.status === 'unchecked' ? 'selected' : ''}>Не проверено</option>
-                            <option value="checked" ${test.status === 'checked' ? 'selected' : ''}>Проверено</option>
-                            <option value="error" ${test.status === 'error' ? 'selected' : ''}>Ошибка</option>
-                            <option value="retest" ${test.status === 'retest' ? 'selected' : ''}>Ретест</option>
-                        </select>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        archiveList.appendChild(runCard);
-    });
-}
-
 document.getElementById('toggle-sidebar').addEventListener('click', function() {
     const sidebar = document.querySelector('.sidebar');
     const container = document.querySelector('.container');
@@ -1010,26 +770,6 @@ document.getElementById('toggle-sidebar').addEventListener('click', function() {
     container.classList.toggle('shifted');
 });
 
-function showToast(message, type = 'info') {
-    const toastContainer = document.getElementById('toast-container');
-    
-    const toast = document.createElement('div');
-    toast.classList.add('toast', type);
-    toast.textContent = message;
-    
-    toastContainer.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('show');
-    }, 100); // Slight delay to trigger the CSS transition
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-            toastContainer.removeChild(toast);
-        }, 500); // Duration of the hide animation
-    }, 3000); // Duration to show the toast
-}
 
 function exportData() {
     // Собираем данные из localStorage
@@ -1121,9 +861,3 @@ loadProjects();
 loadRuns();
 loadArchiveRuns();
 loadRepository();
-
-
-function refreshPage() {
-    localStorage.clear();
-    location.reload();
-}
