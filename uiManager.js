@@ -1,5 +1,7 @@
 // uiManager.js - Управление интерфейсом
 
+
+
 export function showPage(pageId) {
     const mainContent = document.getElementById('main-content');
     const loginPage = document.getElementById('login-page');
@@ -32,7 +34,21 @@ export function showPage(pageId) {
         currentPage.style.display = 'block'; // Показываем нужную страницу
         localStorage.setItem('currentPage', pageId); // Сохраняем текущую страницу
     }
+
+    // Проверяем, является ли это страницей с деталями проекта
+    if (pageId === 'project-detail') {
+        const projectId = currentProjectId; // Убедитесь, что currentProjectId задан
+
+        if (!projectId) {
+            console.error('Идентификатор текущего проекта не установлен.');
+            return;
+        }
+
+        // Загружаем и отображаем информацию о текущем проекте
+        viewProject(projectId);
+    }
 }
+
 window.showPage = showPage;
 
 export function openModal(modalId) {
@@ -78,6 +94,7 @@ export function showToast(message, type = 'info') {
         }, 500); // Duration of the hide animation
     }, 3000); // Duration to show the toast
 }
+window. showToast = showToast;
 
 export function initializePlatformSelection() {
     const platformTiles = document.querySelectorAll('.platform-tile');
@@ -94,4 +111,5 @@ export function refreshPage() {
     localStorage.clear();
     location.reload();
 }
+window.refreshPage = refreshPage;
 

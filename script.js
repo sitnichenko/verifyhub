@@ -1,10 +1,11 @@
 import { isAuthenticated, login, logout, } from './auth.js';
-import { generateId, createProject, createProjectold, deleteProject, deleteProjectold, updateProject, loadProjects, loadArchiveRuns, addProject, updateProjectList } from './dataManager.js';
+import { generateId, createProject, viewProject, setCurrentProjectId, selectProject, handleSaveProject, deleteProject, updateProject, loadArchiveRuns, loadProjectsAndRender, saveProjectToLocalStorage, addProject, editProject, openProject, updateProjectList } from './dataManager.js';
 import { showPage, openModal, closeModal, resetForm, showToast, initializePlatformSelection, toggleTileSelection, refreshPage } from './uiManager.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Получаем последнюю сохраненную страницу из localStorage
     const savedPage = localStorage.getItem('currentPage');
+    
 
     // Проверка авторизации при загрузке страницы
     if (!isAuthenticated()) {
@@ -68,117 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function loadProjectsAndRender() {
-    const projects = loadProjects();
-    updateProjectList(projects);
-    window.loadProjectsAndRender = loadProjectsAndRender;
-}
-
-function editProject(index) {
-    const modal = document.getElementById('edit-project-modal');
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const project = projects[index];
-
-    // Заполняем поля данными текущего проекта
-    document.getElementById('edit-project-name-input').value = project.name;
-    document.getElementById('edit-project-description-input').value = project.description;
-
-    // Установка состояния плиток и обработчиков кликов
-    const platformTiles = document.querySelectorAll('#edit-project-modal .platform-tile');
-    platformTiles.forEach(tile => {
-        tile.classList.remove('selected');
-    });
-
-    project.platforms.forEach(platform => {
-        const tile = document.querySelector(`#edit-project-modal .platform-tile[data-platform="${platform}"]`);
-        if (tile) {
-            tile.classList.add('selected');
-        }
-    });
-
-    // Инициализация обработчиков кликов для плиток платформ
-    initializePlatformSelection();
-
-    modal.style.display = 'block';
-
-    const saveButton = document.getElementById('save-edit-project-button');
-    saveButton.onclick = function() {
-        const nameInput = document.getElementById('edit-project-name-input').value;
-        const descriptionInput = document.getElementById('edit-project-description-input').value;
-        const selectedTiles = document.querySelectorAll('#edit-project-modal .platform-tile.selected');
-        const platforms = Array.from(selectedTiles).map(tile => tile.getAttribute('data-platform'));
-        const nameError = document.getElementById('edit-project-name-error');
-        const descriptionError = document.getElementById('edit-project-description-error');
-
-        let isValid = true;
-
-        // Проверка поля имени
-        if (!nameInput) {
-            nameError.textContent = 'Пожалуйста, введите название проекта.';
-            nameError.style.display = 'block';
-            isValid = false;
-        } else {
-            nameError.style.display = 'none';
-        }
-
-        // Если все валидно, сохраняем изменения
-        if (isValid) {
-            projects[index].name = nameInput;
-            projects[index].description = descriptionInput;
-            projects[index].platforms = platforms;
-            localStorage.setItem('projects', JSON.stringify(projects));
-            loadProjects();
-            modal.style.display = 'none';
-            showToast('Проект успешно обновлен', 'success');
-        }
-    };
-
-    // Обработчик события для кнопки "Отмена" в модальном окне
-    const cancelButton = document.getElementById('cancel-edit-project-button');
-    cancelButton.onclick = function() {
-        modal.style.display = 'none';
-    };
-
-    // Обработчик события для кнопки закрытия модального окна (крестик)
-    const closeButton = document.getElementById('close-edit-project-button');
-    closeButton.onclick = function() {
-        modal.style.display = 'none';
-    };
-
-    // Обработчик события для клика вне модального окна (закрывает окно)
-    window.onclick = function(event) {
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
-}
-
-
-
-function viewProject(index) {
-    currentProjectIndex = index;
-    const projects = JSON.parse(localStorage.getItem('projects'));
-    const project = projects[index];
-    
-    if (!project) {
-        console.error('Проект не найден.');
-        return;
-    }
-    
-    document.getElementById('project-name').textContent = project.name;
-    document.getElementById('project-description').textContent = project.description;
-    
-    const platformText = project.platforms.length > 0 ? `Платформы: ${project.platforms.join(', ')}` : 'Платформы не выбраны';
-    document.getElementById('project-platform').textContent = platformText;
-    
-    loadTests(); // Загрузка тестов для текущего проекта
-    showPage('project-detail');
-}
-
-function selectProject(index) {
-    currentProjectIndex = index;
-    loadTests(); // Загрузить тесты для выбранного проекта
-}
 
 // Функция для загрузки тестов в карточку проекта и папки
 function loadTests() {
@@ -835,7 +725,7 @@ function importData(event) {
                 currentProjectIndex = null;
 
                 // Обновляем отображение проектов, прогонов и архивов
-                loadProjects();
+                loadProjectsAndRender();
                 loadRuns();
                 loadArchiveRuns();
                 loadRepository(); // Обновляем страницу репозитория
@@ -857,7 +747,29 @@ document.getElementById('export-button').addEventListener('click', exportData);
 document.getElementById('import-file').addEventListener('change', importData);
 
 // Первоначальный рендер данных, если он необходим
-loadProjects();
+loadProjectsAndRender();
 loadRuns();
 loadArchiveRuns();
 loadRepository();
+
+document.addEventListener('DOMContentLoaded', () => {
+    const saveButton = document.getElementById('save-project-button');
+    
+    saveButton.addEventListener('click', () => {
+        const nameInput = document.getElementById('project-name-input').value.trim();
+        const descriptionInput = document.getElementById('project-description-input').value.trim();
+        const platforms = Array.from(document.querySelectorAll('.platform-tile.selected')).map(tile => tile.getAttribute('data-platform'));
+
+        if (!nameInput) {
+            document.getElementById('project-name-error').textContent = 'Пожалуйста, введите название проекта.';
+            return;
+        }
+
+        // Создаем проект с использованием функции из dataManager.js
+        createProject(nameInput, descriptionInput, platforms);
+        
+        loadProjectsAndRender();
+        closeModal('add-project-modal');
+        showToast('Проект успешно создан', 'success');
+    });
+});
