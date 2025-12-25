@@ -1137,3 +1137,54 @@ function refreshPage() {
     localStorage.clear();
     location.reload();
 }
+
+const forgotLink = document.getElementById('forgot-password-link');
+const forgotPage = document.getElementById('forgot-password-page');
+const backToLogin = document.getElementById('back-to-login');
+const loginPage = document.getElementById('login-page');
+
+if (forgotLink) {
+  forgotLink.addEventListener('click', () => {
+    loginPage.classList.add('hidden');
+    loginPage.classList.remove('flex');
+
+    forgotPage.classList.remove('hidden');
+    forgotPage.classList.add('flex');
+  });
+}
+
+if (backToLogin) {
+  backToLogin.addEventListener('click', () => {
+    forgotPage.classList.add('hidden');
+    forgotPage.classList.remove('flex');
+
+    loginPage.classList.remove('hidden');
+    loginPage.classList.add('flex');
+  });
+}
+
+const forgotForm = document.getElementById('forgot-password-form');
+const forgotSuccessPage = document.getElementById('forgot-success-page');
+const successBackToLogin = document.getElementById('success-back-to-login');
+
+if (forgotForm) {
+  forgotForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    forgotPage.classList.add('hidden');
+    forgotPage.classList.remove('flex');
+
+    forgotSuccessPage.classList.remove('hidden');
+    forgotSuccessPage.classList.add('flex');
+  });
+}
+
+if (successBackToLogin) {
+  successBackToLogin.addEventListener('click', () => {
+    forgotSuccessPage.classList.add('hidden');
+    forgotSuccessPage.classList.remove('flex');
+
+    loginPage.classList.remove('hidden');
+    loginPage.classList.add('flex');
+  });
+}

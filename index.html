@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VerifyHub</title>
     <link rel="stylesheet" href="styles.css">
+   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
     <div id="toast-container"></div>
@@ -104,7 +105,7 @@
                             <span>Untitled</span>
                         </div>
                         <ul class="sub-suites">
-                            <li>Authorization</li>
+                            <li>test</li>
                         </ul>
                     </li>
                 </ul>
@@ -244,19 +245,135 @@
     </div>
 </div>
 
-<!-- Страница авторизации -->
-<div id="login-page" class="login-page" style="display: none;">
-    <div class="login-container">
-        <h2>Авторизация</h2>
-        <form id="login-form">
-            <input type="text" id="username" placeholder="Логин" required autocomplete="username">
-            <input type="password" id="password" placeholder="Пароль" required autocomplete="current-password">
-            <span id="login-error" class="error-message"></span>
-            <button type="submit" class="custom-button">Войти</button>
-        </form>
+<div
+  id="login-page"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" 
+  style="display: none;"
+>
+ <div class="w-full max-w-sm rounded-xl border bg-white p-6 shadow-lg min-h-[420px] flex flex-col justify-center">
+    <div class="mb-6 text-center">
+      <h1 class="text-2xl font-semibold tracking-tight">
+      Авторизация
+      </h1>
+      <p class="text-sm text-gray-500">
+        Используйте логин и пароль
+      </p>
     </div>
+
+    <form id="login-form" class="space-y-4">
+      <div class="space-y-2">
+        <label class="text-sm font-medium">Логин</label>
+        <input
+          id="username"
+          type="text"
+          required
+          class="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black"
+        />
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-sm font-medium">Пароль</label>
+        <input
+          id="password"
+          type="password"
+          required
+          class="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black"
+        />
+      </div>
+
+      <span
+        id="login-error"
+        class="block text-sm text-red-500"
+      ></span>
+
+      <button
+        type="submit"
+        class="w-full rounded-md bg-black py-2 text-sm font-medium text-white hover:bg-black/90"
+      >
+        Войти
+      </button>
+
+      <div class="text-center text-sm">
+  <button
+    type="button"
+    id="forgot-password-link"
+    class="text-gray-500 underline hover:text-black"
+  >
+    Забыли пароль?
+  </button>
+</div>
+    </form>
+  </div>
 </div>
 
+<div
+  id="forgot-password-page"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50"
+>
+<div class="w-full max-w-sm rounded-xl border bg-white p-6 shadow-lg min-h-[420px] flex flex-col justify-center">
+    <div class="mb-6 text-center">
+      <h1 class="text-2xl font-semibold tracking-tight">
+        Восстановление пароля
+      </h1>
+      <p class="text-sm text-gray-500">
+        Введите email для восстановления
+      </p>
+    </div>
+
+    <form id="forgot-password-form" class="space-y-4">
+      <div class="space-y-2">
+        <label class="text-sm font-medium">Email</label>
+        <input
+          type="email"
+          required
+          class="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black"
+          placeholder="mail@example.com"
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="w-full rounded-md bg-black py-2 text-sm font-medium text-white hover:bg-black/90"
+      >
+        Отправить ссылку
+      </button>
+
+      <div class="text-center text-sm">
+        <button
+          type="button"
+          id="back-to-login"
+          class="text-gray-500 underline hover:text-black"
+        >
+          Назад к входу
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div
+  id="forgot-success-page"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50"
+>
+  <div class="w-full max-w-sm min-h-[420px] rounded-xl border bg-white p-6 shadow-lg flex flex-col justify-center text-center">
+    <div class="mb-4 text-4xl">📧</div>
+
+    <h1 class="text-2xl font-semibold tracking-tight mb-2">
+      Письмо отправлено
+    </h1>
+
+    <p class="text-sm text-gray-500 mb-6">
+      Если email существует, мы отправили ссылку для восстановления пароля
+    </p>
+
+    <button
+      id="success-back-to-login"
+      class="rounded-md bg-black py-2 text-sm font-medium text-white hover:bg-black/90"
+    >
+      Вернуться ко входу
+    </button>
+  </div>
+</div>
 
     <script src="script.js"></script>
 </body>
