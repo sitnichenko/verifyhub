@@ -46,7 +46,7 @@ function login(event) {
     const password = document.getElementById('password').value;
     const loginError = document.getElementById('login-error');
 
-    if (username === '1' && password === '1') {
+    if (username === 'roma@paperpaper.ru' && password === 'IKrestmaynHHP00') {
         const token = 'exampleToken';
         const expirationTime = new Date().getTime() + 10800000; // 3 часа
 
