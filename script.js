@@ -1188,3 +1188,27 @@ if (successBackToLogin) {
     loginPage.classList.add('flex');
   });
 }
+
+const registerPage = document.getElementById('register-page');
+const goToRegister = document.getElementById('go-to-register');
+const backFromRegister = document.getElementById('back-to-login-from-register');
+
+if (goToRegister) {
+  goToRegister.addEventListener('click', () => {
+    loginPage.classList.add('hidden');
+    loginPage.classList.remove('flex');
+
+    registerPage.classList.remove('hidden');
+    registerPage.classList.add('flex');
+  });
+}
+
+if (backFromRegister) {
+  backFromRegister.addEventListener('click', () => {
+    registerPage.classList.add('hidden');
+    registerPage.classList.remove('flex');
+
+    loginPage.classList.remove('hidden');
+    loginPage.classList.add('flex');
+  });
+}
