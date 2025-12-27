@@ -116,10 +116,73 @@
             <button id="logout-button" class="custom-button">Выйти из аккаунта</button>
         </div>
 
-        <div id="dashboard" class="page hidden">
-            <h1>Дашборд</h1>
-            <p>Тут пока ничего нет.</p>
-        </div>
+<div id="dashboard" class="page hidden space-y-6">
+
+  <!-- Заголовок -->
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">
+      Dashboard
+    </h1>
+    <p class="text-sm text-gray-500">
+      Общая статистика и последние изменения
+    </p>
+  </div>
+
+  <!-- Статистика -->
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="rounded-xl border bg-white p-4">
+      <p class="text-sm text-gray-500">Проекты</p>
+      <p class="text-2xl font-bold">4</p>
+    </div>
+
+    <div class="rounded-xl border bg-white p-4">
+      <p class="text-sm text-gray-500">Тест-кейсы</p>
+      <p class="text-2xl font-bold">128</p>
+    </div>
+
+    <div class="rounded-xl border bg-white p-4">
+      <p class="text-sm text-gray-500">Прогоны</p>
+      <p class="text-2xl font-bold">12</p>
+    </div>
+
+    <div class="rounded-xl border bg-white p-4">
+      <p class="text-sm text-gray-500">Ошибки</p>
+      <p class="text-2xl font-bold text-red-600">3</p>
+    </div>
+  </div>
+
+  <!-- Последние проекты -->
+  <div class="space-y-4">
+    <h2 class="text-lg font-semibold">
+      Последние проекты
+    </h2>
+
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div class="rounded-xl border bg-white p-4 hover:shadow transition">
+        <h3 class="font-medium">VerifyHub Web</h3>
+        <p class="text-sm text-gray-500">
+          Web regression tests
+        </p>
+      </div>
+
+      <div class="rounded-xl border bg-white p-4 hover:shadow transition">
+        <h3 class="font-medium">Mobile App</h3>
+        <p class="text-sm text-gray-500">
+          Android smoke tests
+        </p>
+      </div>
+
+      <div class="rounded-xl border bg-white p-4 hover:shadow transition">
+        <h3 class="font-medium">API</h3>
+        <p class="text-sm text-gray-500">
+          Backend API checks
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
 
         <div id="projects" class="page hidden">
             <h1>Список проектов</h1>
