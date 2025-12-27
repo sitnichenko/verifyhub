@@ -3,17 +3,53 @@ document.addEventListener('DOMContentLoaded', () => {
     // Получаем последнюю сохраненную страницу из localStorage
     const savedPage = localStorage.getItem('currentPage');
 
-    // Проверка авторизации при загрузке страницы
-    if (!isAuthenticated()) {
-        showPage('login-page');
-    } else {
-        // Если страница сохранена, показываем её, иначе показываем дашборд
-        if (savedPage) {
-            showPage(savedPage);
-        } else {
-            showPage('dashboard');
-        }
-    }
+const sidebarPages = [
+  'dashboard',
+  'projects',
+  'repository',
+  'runs',
+  'archive',
+  'account'
+];
+
+function showPage(pageId) {
+  // active state — только для sidebar-страниц
+  if (sidebarPages.includes(pageId)) {
+    setActiveSidebar(pageId);
+    localStorage.setItem('currentPage', pageId);
+  }
+
+  // auth guard
+  if (pageId !== 'login-page' && !isAuthenticated()) {
+    showPage('login-page');
+    return;
+  }
+
+  // скрываем все страницы
+  document.querySelectorAll('.page').forEach(page => {
+    page.classList.add('hidden');
+  });
+
+  // показываем нужную
+  const currentPage = document.getElementById(pageId);
+  if (currentPage) {
+    currentPage.classList.remove('hidden');
+  }
+
+  // login / app layout
+  const mainContent = document.getElementById('main-content');
+  const loginPage = document.getElementById('login-page');
+
+  if (pageId === 'login-page') {
+    mainContent.style.display = 'none';
+    loginPage.style.display = 'flex';
+  } else {
+    mainContent.style.display = 'block';
+    loginPage.style.display = 'none';
+  }
+}
+window.showPage = showPage;
+
 
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
@@ -70,39 +106,6 @@ function logout() {
 }
 
 
-function showPage(pageId) {
-    const mainContent = document.getElementById('main-content');
-    const loginPage = document.getElementById('login-page');
-
-    if (pageId === 'login-page') {
-        // Если это страница авторизации, скрываем основной контент
-        mainContent.style.display = 'none';
-        loginPage.style.display = 'flex';
-        localStorage.removeItem('currentPage'); // Очищаем сохраненную страницу
-        return;
-    }
-
-    // Если пользователь не авторизован и пытается попасть на другую страницу, кроме авторизации, перенаправляем на авторизацию
-    if (!isAuthenticated()) {
-        showPage('login-page');
-        return;
-    }
-
-    // Отображаем основной контент и скрываем страницу авторизации
-    mainContent.style.display = 'block';
-    loginPage.style.display = 'none';
-
-    const pages = document.querySelectorAll('.page');
-    pages.forEach(page => {
-        page.style.display = 'none';
-    });
-
-    const currentPage = document.getElementById(pageId);
-    if (currentPage) {
-        currentPage.style.display = 'block'; // Показываем нужную страницу
-        localStorage.setItem('currentPage', pageId); // Сохраняем текущую страницу
-    }
-}
 
 function loadProjects() {
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
@@ -1013,12 +1016,49 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('edit-test-modal').style.display = 'none';
 });
 
-document.getElementById('toggle-sidebar').addEventListener('click', function() {
-    const sidebar = document.querySelector('.sidebar');
-    const container = document.querySelector('.container');
-    sidebar.classList.toggle('hidden');
-    container.classList.toggle('shifted');
-});
+const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+const sidebarOpenBtn = document.getElementById('sidebar-open-btn');
+const sidebar = document.getElementById('sidebar');
+const mainContainer = document.getElementById('main-container');
+
+let sidebarOpen = true;
+
+function openSidebar() {
+  sidebarOpen = true;
+  sidebar.classList.remove('-translate-x-full');
+
+  mainContainer.classList.remove('ml-0', 'pl-12');
+  mainContainer.classList.add('ml-64');
+
+  sidebarOpenBtn.classList.add('hidden');
+}
+
+function closeSidebar() {
+  sidebarOpen = false;
+  sidebar.classList.add('-translate-x-full');
+
+  mainContainer.classList.remove('ml-64');
+  mainContainer.classList.add('ml-0', 'pl-12');
+
+  sidebarOpenBtn.classList.remove('hidden');
+}
+
+if (toggleSidebarBtn) {
+  toggleSidebarBtn.addEventListener('click', closeSidebar);
+}
+
+if (sidebarOpenBtn) {
+  sidebarOpenBtn.addEventListener('click', openSidebar);
+}
+
+const sidebarLinks = document.querySelectorAll('.sidebar-link');
+
+function setActiveSidebar(pageId) {
+  sidebarLinks.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === pageId);
+  });
+}
+
 
 function showToast(message, type = 'info') {
     const toastContainer = document.getElementById('toast-container');
@@ -1212,3 +1252,28 @@ if (backFromRegister) {
     loginPage.classList.add('flex');
   });
 }
+
+document.querySelectorAll('.password-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = btn.previousElementSibling;
+
+    if (!input) return;
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      btn.textContent = '👁️';
+    }
+  });
+});
+
+const savedPage = localStorage.getItem('currentPage');
+
+if (!isAuthenticated()) {
+  showPage('login-page');
+} else {
+  showPage(savedPage || 'dashboard');
+}
+

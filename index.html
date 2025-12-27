@@ -13,27 +13,103 @@
      <!-- Основной контент, который скрывается при авторизации -->
      <div id="main-content">
    
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div>
-            <a href="#" onclick="showPage('account')">Account</a>
-            <a href="#" onclick="showPage('dashboard')">Dashboard</a>
-            <a href="#" onclick="showPage('projects')">Projects</a>
-            <a href="#" onclick="showPage('repository')">Repository</a> 
-            <a href="#" onclick="showPage('runs')">Runs and results</a>
-            <a href="#" onclick="showPage('archive')">Archive</a>
-        </div>
-        <div id="refresh-container"> 
-            <input type="file" id="import-file" accept=".json">
-            <button id="export-button">Экспортировать данные</button>
-            <h1></h1>
-            <button id="toggle-sidebar" class="custom-button">toggleSidebar</button>
-            <button class="custom-button" onclick="refreshPage()">deleteLocalStorage</button>
-        </div>
-    </div>
+<aside
+  id="sidebar"
+  class="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col justify-between
+         border-r bg-white px-4 py-6 transition-transform duration-300"
+>
+  <!-- 🔼 Навигация -->
+  <nav class="space-y-1">
+    <button
+      data-page="account"
+     onclick="showPage('account')" 
+     class="sidebar-link w-full rounded-md px-3 py-2 text-left text-lg hover:bg-gray-100">
+      Account
+    </button>
+<button
+  data-page="dashboard"
+  onclick="showPage('dashboard')"
+  class="sidebar-link w-full rounded-md px-3 py-2 text-left text-lg hover:bg-gray-100">
+  Dashboard
+</button>
+    <button 
+    data-page="projects"
+    onclick="showPage('projects')" 
+    class="sidebar-link w-full rounded-md px-3 py-2 text-left text-lg hover:bg-gray-100">
+      Projects
+    </button>
+    <button 
+    data-page="repository"
+    onclick="showPage('repository')"
+    class="sidebar-link w-full rounded-md px-3 py-2 text-left text-lg hover:bg-gray-100">
+      Repository
+    </button>
+    <button 
+    data-page="runs"
+    onclick="showPage('runs')" 
+    class="sidebar-link w-full rounded-md px-3 py-2 text-left text-lg hover:bg-gray-100">
+      Runs
+    </button>
+    <button
+    data-page="archive"
+     onclick="showPage('archive')" 
+    class="sidebar-link w-full rounded-md px-3 py-2 text-left text-lg hover:bg-gray-100">
+      Archive
+    </button>
+  </nav>
+
+  <!-- 🔽 Нижняя зона -->
+  <div class="space-y-2 border-t pt-4">
+
+     <label
+    for="import-file"
+    class="flex cursor-pointer items-center justify-center rounded-md border
+           px-3 py-2 text-sm hover:bg-gray-100"
+  >
+    Загрузить файл
+  </label>
+
+  <input
+    type="file"
+    id="import-file"
+    accept=".json"
+    class="hidden"
+  />
+
+    <button
+      id="export-button"
+      class="w-full rounded-md border px-3 py-2 text-sm hover:bg-gray-100"
+    >
+      Экспортировать данные
+    </button>
+
+    <button
+      id="toggle-sidebar"
+      class="w-full rounded-md border px-3 py-2 text-sm hover:bg-gray-100"
+    >
+      Toggle sidebar
+    </button>
+
+    <button
+      onclick="refreshPage()"
+      class="w-full rounded-md border px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+    >
+      Delete localStorage
+    </button>
+  </div>
+</aside>
+
+<button
+  id="sidebar-open-btn"
+  class="fixed left-2 top-4 z-50 hidden rounded-md border bg-white px-2 py-1
+         text-sm shadow hover:bg-gray-100 transition"
+  aria-label="Open sidebar"
+>
+  ☰
+</button>
 
     <!-- Container -->
-    <div class="container">
+<div id="main-container" class="ml-64 p-6 transition-all duration-300">
 
         <div id="account" class="page hidden">
             <h1>Управление аккаунтом</h1>
@@ -271,7 +347,7 @@
         />
       </div>
 
-     <div class="space-y-2">
+<div class="space-y-2">
   <div class="flex items-center justify-between">
     <label class="text-sm font-medium">Пароль</label>
 
@@ -284,12 +360,24 @@
     </button>
   </div>
 
-  <input
-    id="password"
-    type="password"
-    required
-    class="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black"
-  />
+  <div class="relative">
+    <input
+      id="password"
+      type="password"
+      required
+      class="w-full rounded-md border px-3 py-2 pr-10 text-sm
+             outline-none focus:ring-2 focus:ring-black"
+    />
+
+    <button
+      type="button"
+      class="password-toggle absolute right-2 top-1/2 -translate-y-1/2
+             text-gray-500 hover:text-black"
+      aria-label="Показать пароль"
+    >
+      👁️
+    </button>
+  </div>
 </div>
 
       <span
@@ -336,8 +424,38 @@
 
     <form class="space-y-4">
       <input class="w-full rounded-md border px-3 py-2 text-sm" placeholder="Email" />
-      <input class="w-full rounded-md border px-3 py-2 text-sm" placeholder="Пароль" />
-      <input class="w-full rounded-md border px-3 py-2 text-sm" placeholder="Повторите пароль" />
+     <div class="relative">
+  <input
+    type="password"
+    required
+    class="w-full rounded-md border px-3 py-2 pr-10 text-sm"
+    placeholder="Пароль"
+  />
+
+  <button
+    type="button"
+    class="password-toggle absolute right-2 top-1/2 -translate-y-1/2
+           text-gray-500 hover:text-black"
+  >
+    👁️
+  </button>
+</div>
+      <div class="relative">
+  <input
+    type="password"
+    required
+    class="w-full rounded-md border px-3 py-2 pr-10 text-sm"
+    placeholder="Повторите пароль"
+  />
+
+  <button
+    type="button"
+    class="password-toggle absolute right-2 top-1/2 -translate-y-1/2
+           text-gray-500 hover:text-black"
+  >
+    👁️
+  </button>
+</div>
 
       <button class="w-full rounded-md bg-black py-2 text-sm text-white">
         Зарегистрироваться
