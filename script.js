@@ -50,7 +50,12 @@ function showPage(pageId) {
   if (pageId === 'dashboard') {
   updateDashboardStats();
     renderLatestProjects();
+     renderLatestRuns();
 }
+  if (pageId === 'runs') {
+    loadRuns();
+    setTimeout(highlightRunFromDashboard, 50);
+  }
 }
 window.showPage = showPage;
 
@@ -775,27 +780,30 @@ function deleteTest(testIndex, projectIndex) {
 }
 
 function createRun(projectName, testCount) {
-    const tests = [];
-    for (let i = 0; i < testCount; i++) {
-        tests.push({
-            name: `Тест ${i + 1}`,
-            description: `Описание теста ${i + 1}`,
-            platform: `Платформа ${i + 1}`,
-            status: 'unchecked' // Устанавливаем статус "Не проверено" для каждого теста
-        });
-    }
+  const tests = [];
 
-    const newRun = {
-        projectName: projectName,
-        tests: tests
-    };
+  for (let i = 0; i < testCount; i++) {
+    tests.push({
+      name: `Тест ${i + 1}`,
+      description: `Описание теста ${i + 1}`,
+      platform: `Платформа ${i + 1}`,
+      status: 'unchecked'
+    });
+  }
 
-    const runs = JSON.parse(localStorage.getItem('runs')) || [];
-    runs.push(newRun);
-    localStorage.setItem('runs', JSON.stringify(runs));
+  const newRun = {
+    id: 'run-' + Date.now(), // 👈 ВАЖНО
+    projectName: projectName,
+    tests: tests
+  };
 
-    loadRuns(); // Загружаем прогоны с обновленными данными
+  const runs = JSON.parse(localStorage.getItem('runs')) || [];
+  runs.push(newRun);
+  localStorage.setItem('runs', JSON.stringify(runs));
+
+  loadRuns();
 }
+
 
 function loadRepository() {
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
@@ -891,6 +899,7 @@ function loadRuns() {
 
         const runCard = document.createElement('div');
         runCard.className = 'run-card';
+        runCard.id = run.id || '';
         runCard.innerHTML = `
             <h2>${run.projectName}</h2>
             <div class="run-stats">
@@ -1042,9 +1051,14 @@ function loadArchiveRuns() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadProjects();
-    loadArchiveRuns();
-    showPage(savedPage);
+  loadProjects();
+  loadArchiveRuns();
+
+  if (!isAuthenticated()) {
+    showPage('login-page');
+  } else {
+    showPage(localStorage.getItem('currentPage') || 'dashboard');
+  }
 
     // Инициализация модальных окон для добавления и редактирования тестов
     document.getElementById('add-test-modal').style.display = 'none';
@@ -1276,6 +1290,86 @@ function renderLatestProjects(limit = 3) {
   });
 }
 
+function renderLatestRuns(limit = 3) {
+  const runs = JSON.parse(localStorage.getItem('runs')) || [];
+  const container = document.getElementById('dashboard-latest-runs');
+
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (runs.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'col-span-full text-sm text-gray-500';
+    empty.textContent = 'Прогоны ещё не создавались';
+    container.appendChild(empty);
+    return;
+  }
+
+  const latestRuns = runs.slice(-limit).reverse();
+
+  latestRuns.forEach(run => {
+    const total = run.tests.length;
+
+    const stats = { checked: 0, unchecked: 0, error: 0, retest: 0 };
+    run.tests.forEach(t => stats[t.status]++);
+
+    const completed = total - stats.unchecked;
+    const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+    // 🔹 card объявляется ЗДЕСЬ
+    const card = document.createElement('div');
+    card.className = 'rounded-xl border bg-white p-4 hover:shadow transition cursor-pointer';
+
+    card.innerHTML = `
+      <h3 class="font-medium truncate">${run.projectName}</h3>
+      <p class="text-sm text-gray-500">Тестов: ${total}</p>
+
+      <div class="mt-3">
+        <div class="h-2 w-full rounded bg-gray-100 overflow-hidden">
+          <div class="h-full bg-black" style="width:${percent}%"></div>
+        </div>
+        <div class="mt-1 text-xs text-gray-500">Выполнено ${percent}%</div>
+      </div>
+
+      <div class="mt-3 text-xs text-gray-400 space-y-1">
+        <div>Проверено: ${stats.checked}</div>
+        <div>Не проверено: ${stats.unchecked}</div>
+        <div class="text-red-500">Ошибки: ${stats.error}</div>
+        <div>Ретест: ${stats.retest}</div>
+      </div>
+    `;
+
+    // ✅ КЛИК — ТОЛЬКО ЗДЕСЬ
+    card.onclick = () => {
+      if (run.id) {
+        localStorage.setItem('highlightRunId', run.id);
+      }
+      showPage('runs');
+    };
+
+    container.appendChild(card);
+  });
+}
+
+
+function highlightRunFromDashboard() {
+  const runId = localStorage.getItem('highlightRunId');
+  if (!runId) return;
+
+  const el = document.getElementById(runId);
+  if (!el) return;
+
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.add('ring', 'ring-black');
+
+  setTimeout(() => {
+    el.classList.remove('ring', 'ring-black');
+    localStorage.removeItem('highlightRunId');
+  }, 2000);
+}
+
+
 const forgotLink = document.getElementById('forgot-password-link');
 const forgotPage = document.getElementById('forgot-password-page');
 const backToLogin = document.getElementById('back-to-login');
@@ -1367,11 +1461,5 @@ document.querySelectorAll('.password-toggle').forEach(btn => {
   });
 });
 
-const savedPage = localStorage.getItem('currentPage');
 
-if (!isAuthenticated()) {
-  showPage('login-page');
-} else {
-  showPage(savedPage || 'dashboard');
-}
 
