@@ -47,6 +47,10 @@ function showPage(pageId) {
     mainContent.style.display = 'block';
     loginPage.style.display = 'none';
   }
+  if (pageId === 'dashboard') {
+  updateDashboardStats();
+    renderLatestProjects();
+}
 }
 window.showPage = showPage;
 
@@ -105,6 +109,37 @@ function logout() {
     showPage('login-page');
 }
 
+function updateDashboardStats() {
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  const runs = JSON.parse(localStorage.getItem('runs')) || [];
+
+  // Проекты
+  const projectsCount = projects.length;
+
+  // Все тесты во всех проектах
+  const testsCount = projects.reduce((sum, project) => {
+    return sum + (project.tests ? project.tests.length : 0);
+  }, 0);
+
+  // Прогоны
+  const runsCount = runs.length;
+
+  // Ошибки (error в активных прогонах)
+  let errorsCount = 0;
+  runs.forEach(run => {
+    run.tests.forEach(test => {
+      if (test.status === 'error') {
+        errorsCount++;
+      }
+    });
+  });
+
+  // Рендер
+  document.getElementById('dashboard-projects').textContent = projectsCount;
+  document.getElementById('dashboard-tests').textContent = testsCount;
+  document.getElementById('dashboard-runs').textContent = runsCount;
+  document.getElementById('dashboard-errors').textContent = errorsCount;
+}
 
 
 function loadProjects() {
@@ -1176,6 +1211,69 @@ loadRepository();
 function refreshPage() {
     localStorage.clear();
     location.reload();
+}
+
+function renderLatestProjects(limit = 3) {
+  const projects =
+    JSON.parse(localStorage.getItem('projects')) || [];
+
+  const container = document.getElementById(
+    'dashboard-latest-projects'
+  );
+
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (projects.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full text-sm text-gray-500">
+        Проекты ещё не созданы
+      </div>
+    `;
+    return;
+  }
+
+  // Берём последние N проектов
+  const latestProjects = projects.slice(-limit).reverse();
+
+  latestProjects.forEach((project, index) => {
+    const testsCount = project.tests
+      ? project.tests.length
+      : 0;
+
+    const platforms =
+      project.platforms && project.platforms.length > 0
+        ? project.platforms.join(', ')
+        : '—';
+
+    const card = document.createElement('div');
+    card.className =
+      'rounded-xl border bg-white p-4 hover:shadow transition cursor-pointer';
+
+    card.innerHTML = `
+      <h3 class="font-medium truncate">
+        ${project.name}
+      </h3>
+
+      <p class="text-sm text-gray-500 truncate">
+        ${project.description || 'Без описания'}
+      </p>
+
+      <div class="mt-3 text-xs text-gray-400 space-y-1">
+        <div>Платформы: ${platforms}</div>
+        <div>Тестов: ${testsCount}</div>
+      </div>
+    `;
+
+    // Клик → открыть проект
+    card.onclick = () => {
+      const realIndex = projects.length - 1 - index;
+      viewProject(realIndex);
+    };
+
+    container.appendChild(card);
+  });
 }
 
 const forgotLink = document.getElementById('forgot-password-link');
