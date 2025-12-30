@@ -47,6 +47,8 @@ function showPage(pageId) {
     mainContent.style.display = 'block';
     loginPage.style.display = 'none';
   }
+
+  
   if (pageId === 'dashboard') {
   updateDashboardStats();
     renderLatestProjects();
@@ -56,8 +58,15 @@ function showPage(pageId) {
     loadRuns();
     setTimeout(highlightRunFromDashboard, 50);
   }
+  if (pageId === 'repository') {
+  loadRepository();
+}
+
+  setActiveSidebar(pageId);
 }
 window.showPage = showPage;
+
+
 
 
     const loginForm = document.getElementById('login-form');
@@ -74,6 +83,7 @@ window.showPage = showPage;
 
 const USERNAME = '1';
 const PASSWORD = '1';
+let currentRunId = null;
 
 function isAuthenticated() {
     const token = localStorage.getItem('authToken');
@@ -114,9 +124,27 @@ function logout() {
     showPage('login-page');
 }
 
+// ===== Run storage helpers =====
+
+function getRuns() {
+  return JSON.parse(localStorage.getItem('runs')) || [];
+}
+
+function setRuns(runs) {
+  localStorage.setItem('runs', JSON.stringify(runs));
+}
+
+function getArchivedRuns() {
+  return JSON.parse(localStorage.getItem('archivedRuns')) || [];
+}
+
+function setArchivedRuns(runs) {
+  localStorage.setItem('archivedRuns', JSON.stringify(runs));
+}
+
 function updateDashboardStats() {
   const projects = JSON.parse(localStorage.getItem('projects')) || [];
-  const runs = JSON.parse(localStorage.getItem('runs')) || [];
+  const runs = getRuns() || [];
 
   // Проекты
   const projectsCount = projects.length;
@@ -147,67 +175,110 @@ function updateDashboardStats() {
 }
 
 
-function loadProjects() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const projectList = document.getElementById('project-list');
-    projectList.innerHTML = ''; // Очистка списка перед обновлением
 
-    projects.forEach((project, index) => {
-        const projectElement = document.createElement('div');
-        projectElement.classList.add('project-card');
-        
-        // Получаем количество тестов
-        const testCount = project.tests ? project.tests.length : 0;
-        const testCountText = testCount > 0 ? `Количество тестов: ${testCount}` : 'Тесты отсутствуют';
-        
-        projectElement.innerHTML = `
-            <h2>${project.name}</h2>
-            <p>${project.description}</p>
-            <p>Платформы: ${project.platforms.join(', ')}</p>
-            <p>${testCountText}</p>
-            <button onclick="viewProject(${index})">Открыть</button>
-            <button onclick="editProject(${index})">Редактировать</button>
-            <button onclick="deleteProject(${index})">Удалить</button>
-        `;
-        projectList.appendChild(projectElement);
-    });
+
+function loadProjects() {
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  const container = document.getElementById('project-list');
+
+  if (!container) return;
+  container.innerHTML = '';
+
+  // Empty state
+  if (projects.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full rounded-xl border bg-white p-8 text-center">
+        <p class="text-sm text-gray-500">
+          Проекты ещё не созданы
+        </p>
+        <button
+          class="mt-4 rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-black/90"
+          onclick="addProject()"
+        >
+          Создать первый проект
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  projects.forEach((project, index) => {
+    const testsCount = project.tests?.length || 0;
+    const platforms =
+      project.platforms?.length
+        ? project.platforms.join(', ')
+        : '—';
+
+    const card = document.createElement('div');
+    card.className =
+      'rounded-xl border bg-white p-4 hover:shadow transition cursor-pointer flex flex-col justify-between';
+
+    card.innerHTML = `
+      <div class="space-y-2">
+        <h3 class="font-medium truncate">
+          ${project.name}
+        </h3>
+
+        <p class="text-sm text-gray-500 line-clamp-2">
+          ${project.description || 'Без описания'}
+        </p>
+      </div>
+
+      <div class="mt-4 text-xs text-gray-400 space-y-1">
+        <div>Платформы: ${platforms}</div>
+        <div>Тестов: ${testsCount}</div>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button
+          class="flex-1 rounded-md border px-3 py-1.5 text-sm hover:bg-gray-100"
+          onclick="event.stopPropagation(); viewProject(${index})"
+        >
+          Открыть
+        </button>
+
+        <button
+          class="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-100"
+          onclick="event.stopPropagation(); editProject(${index})"
+        >
+          ✏️
+        </button>
+
+        <button
+          class="rounded-md border px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+          onclick="event.stopPropagation(); deleteProject(${index})"
+        >
+          🗑
+        </button>
+      </div>
+    `;
+
+    // клик по карточке → открыть проект
+    card.onclick = () => viewProject(index);
+
+    container.appendChild(card);
+  });
 }
 
 function createProject() {
-    const projectName = document.getElementById('project-name-input').value;
-    const projectDescription = document.getElementById('project-description-input').value;
-    const projectPlatforms = []; // Замените на вашу логику получения платформ
+  const name = document.getElementById('project-name-input').value;
+  const description = document.getElementById('project-description-input').value;
+  const platforms = [];
 
-    if (!projectName) {
-        console.error('Название проекта не указано.');
-        return;
-    }
+  if (!name) return;
 
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
 
-    // Создание начальной папки
-    const initialFolder = {
-        id: 'untitled-folder-' + new Date().getTime(),
-        name: 'Untitled',
-        cases: [] // Инициализация как массив
-    };
+  projects.push({
+    name,
+    description,
+    platforms,
+    tests: []
+  });
 
-    const project = {
-        name: projectName,
-        description: projectDescription,
-        platforms: projectPlatforms,
-        tests: [],
-        folders: [initialFolder] // Инициализация как массив
-    };
-
-    projects.push(project);
-
-    localStorage.setItem('projects', JSON.stringify(projects));
-
-    loadProjects(); // Обновите список проектов
-    loadRepository(); // Обновите список репозитория
+  localStorage.setItem('projects', JSON.stringify(projects));
+  loadProjects();
 }
-
 
 
 // Функция инициализации обработчиков кликов для плиток платформ (вызывается один раз)
@@ -302,23 +373,12 @@ function resetForm() {
     document.getElementById('project-description-error').textContent = '';
 }
 
-// Функция инициализации обработчиков кликов для плиток платформ (вызывается один раз)
-function initializePlatformSelection() {
-    const platformTiles = document.querySelectorAll('.platform-tile');
-    platformTiles.forEach(tile => {
-        tile.addEventListener('click', toggleTileSelection);
-    });
-}
 
 // Функция для переключения выбора плитки платформ
 function toggleTileSelection() {
     this.classList.toggle('selected');
 }
 
-// Вызываем инициализацию обработчиков плиток платформ один раз при загрузке страницы
-window.onload = function() {
-    initializePlatformSelection();
-}
 
 function editProject(index) {
     const modal = document.getElementById('edit-project-modal');
@@ -427,68 +487,62 @@ function viewProject(index) {
     
     loadTests(); // Загрузка тестов для текущего проекта
     showPage('project-detail');
+    setActiveSidebar('projects'); // 👈 ВАЖНО
+
 }
 
-function selectProject(index) {
-    currentProjectIndex = index;
-    loadTests(); // Загрузить тесты для выбранного проекта
+function openProject(projectId) {
+  showPage('project-detail');
+  setActiveSidebar('projects');
 }
 
-// Функция для загрузки тестов в карточку проекта и папки
 function loadTests() {
-    if (currentProjectIndex === null || currentProjectIndex === undefined) {
-        console.error('Текущий проект не установлен.');
-        return;
-    }
+  if (currentProjectIndex == null) return;
 
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const project = projects[currentProjectIndex];
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  const project = projects[currentProjectIndex];
+  if (!project) return;
 
-    if (!project) {
-        console.error('Текущий проект не найден.');
-        return;
-    }
+  const testList = document.getElementById('test-list');
+  const testCount = document.getElementById('test-count');
 
-    const testList = document.getElementById('test-list');
-    const testCountElement = document.getElementById('test-count');
-    const folderCaseContainers = document.querySelectorAll('.case-container');
+  testList.innerHTML = '';
 
-    testList.innerHTML = '';
+  if (!project.tests || project.tests.length === 0) {
+    testList.innerHTML = `
+      <div class="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">
+        В проекте пока нет тестов
+      </div>
+    `;
+    testCount.textContent = '';
+    return;
+  }
 
-    folderCaseContainers.forEach(container => container.innerHTML = ''); // Очистка контейнеров
+  testCount.textContent = `Тестов: ${project.tests.length}`;
 
-    if (!project.tests || project.tests.length === 0) {
-        testList.innerHTML = '<p>Тесты отсутствуют.</p>';
-        testCountElement.textContent = '';
-        return;
-    }
+  project.tests.forEach((test, index) => {
+    const card = document.createElement('div');
+    card.id = test.id;
+    card.className = 'rounded-xl border bg-white p-4 flex justify-between';
 
-    testCountElement.textContent = `Количество тестов: ${project.tests.length}`;
+    card.innerHTML = `
+      <div>
+        <div class="font-medium">${test.name}</div>
+        <div class="text-sm text-gray-500">${test.description || ''}</div>
+        <div class="text-xs text-gray-400">
+          Платформы: ${Array.isArray(test.platform) ? test.platform.join(', ') : test.platform}
+        </div>
+      </div>
 
-    project.tests.forEach((test, testIndex) => {
-        // Создание карточки теста
-        const testCard = document.createElement('div');
-        testCard.className = 'test-card';
-        testCard.innerHTML = `
-            <h3>${test.name}</h3>
-            <p>${test.description}</p>
-            <p>Платформа: ${test.platform.join(', ')}</p>
-            <button onclick="editTest(${testIndex}, ${currentProjectIndex})">Редактировать</button>
-            <button onclick="deleteTest(${testIndex}, ${currentProjectIndex})">Удалить</button>
-        `;
-        testList.appendChild(testCard);
+      <div class="flex gap-2">
+        <button onclick="editTest(${index}, ${currentProjectIndex})">✏️</button>
+        <button onclick="deleteTest(${index}, ${currentProjectIndex})">🗑</button>
+      </div>
+    `;
 
-        // Обновление папок
-        project.folders.forEach(folder => {
-            const folderCaseContainer = document.getElementById(`folder-${folder.id}-cases`);
-            if (folderCaseContainer) {
-                const caseElement = document.createElement('div');
-                caseElement.className = 'case';
-                caseElement.innerHTML = `<span>${test.name}</span>`;
-                folderCaseContainer.appendChild(caseElement);
-            }
-        });
-    });
+    testList.appendChild(card);
+  });
+  loadProjects();
 }
 
 
@@ -626,6 +680,64 @@ function clearTestModalFields() {
     document.getElementById('test-platform-error').style.display = 'none';
 }
 
+function quickAddTest() {
+  const input = document.getElementById('quick-test-input');
+  const name = input.value.trim();
+  if (!name) return;
+
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  const project = projects[currentProjectIndex];
+  if (!project) return;
+
+  const test = {
+    id: 'test-' + Date.now(),
+    name,
+    description: '',
+    platform: project.platforms || [],
+    status: 'unchecked'
+  };
+
+  project.tests.push(test);
+  localStorage.setItem('projects', JSON.stringify(projects));
+
+  input.value = '';
+  loadTests();
+  scrollToTest(test.id);
+
+  loadProjects();
+
+}
+
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+
+  const input = document.getElementById('quick-test-input');
+  if (!input) return;
+
+  if (document.activeElement === input) {
+    e.preventDefault();
+    quickAddTest();
+  }
+});
+
+function scrollToTest(testId) {
+  setTimeout(() => {
+    const el = document.getElementById(testId);
+    if (!el) return;
+
+    el.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+
+    el.classList.add('ring', 'ring-black');
+
+    setTimeout(() => {
+      el.classList.remove('ring', 'ring-black');
+    }, 1500);
+  }, 50);
+}
 
 function editTest(testIndex, projectIndex) {
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
@@ -693,7 +805,6 @@ function editTest(testIndex, projectIndex) {
             localStorage.setItem('projects', JSON.stringify(projects));
             
             loadTests(); // Обновляем тесты на странице проекта
-            loadRepository(); // Обновляем тесты на странице репозитория
             
             modal.style.display = 'none';
             clearEditTestModalFields();
@@ -774,285 +885,706 @@ function deleteTest(testIndex, projectIndex) {
         loadTests(); // Обновляем тесты на странице проекта
     }
 
-    loadRepository(); // Обновляем репозиторий на странице
 
     showToast('Тест удален успешно', 'warning');
 }
 
-function createRun(projectName, testCount) {
-  const tests = [];
-
-  for (let i = 0; i < testCount; i++) {
-    tests.push({
-      name: `Тест ${i + 1}`,
-      description: `Описание теста ${i + 1}`,
-      platform: `Платформа ${i + 1}`,
-      status: 'unchecked'
-    });
-  }
-
-  const newRun = {
-    id: 'run-' + Date.now(), // 👈 ВАЖНО
-    projectName: projectName,
-    tests: tests
-  };
-
-  const runs = JSON.parse(localStorage.getItem('runs')) || [];
-  runs.push(newRun);
-  localStorage.setItem('runs', JSON.stringify(runs));
-
-  loadRuns();
-}
-
 
 function loadRepository() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const repositoryList = document.getElementById('repository-list');
-    repositoryList.innerHTML = ''; // Очистка предыдущего содержимого
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  const container = document.getElementById('repository-list');
+  if (!container) return;
 
-    projects.forEach((project, projectIndex) => {
-        const projectContainer = document.createElement('div');
-        projectContainer.className = 'project-container';
+  container.innerHTML = '';
 
-        const projectTitle = document.createElement('h2');
-        projectTitle.textContent = project.name;
-        projectContainer.appendChild(projectTitle);
+  if (projects.length === 0) {
+    container.innerHTML = `
+      <div class="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">
+        Проекты отсутствуют
+      </div>
+    `;
+    return;
+  }
 
-        const testCount = project.tests ? project.tests.length : 0;
-        const testCountText = testCount > 0 ? `Количество тестов: ${testCount}` : 'Тесты отсутствуют';
-        
-        const testCountElement = document.createElement('p');
-        testCountElement.textContent = testCountText;
-        projectContainer.appendChild(testCountElement);
+  projects.forEach((project, index) => {
+    const tests = project.tests || [];
 
-        if (project.tests && project.tests.length > 0) {
-            const testList = document.createElement('div');
-            testList.className = 'test-list';
+    // wrapper — даёт отступы между проектами
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mb-6';
 
-            project.tests.forEach((test, testIndex) => {
-                const platforms = Array.isArray(test.platform) ? test.platform : [test.platform];
+    // project card
+    const card = document.createElement('div');
+card.className =
+  'rounded-xl border bg-white p-4 cursor-pointer hover:shadow-md transition';
 
-                const testCard = document.createElement('div');
-                testCard.className = 'test-card';
-                testCard.innerHTML = `
-                    <h3>${test.name}</h3>
-                    <p>${test.description}</p>
-                    <p>Платформа: ${platforms.join(', ')}</p>
-                    <button onclick="editTest(${testIndex}, ${projectIndex})">Редактировать</button>
-                    <button onclick="deleteTest(${testIndex}, ${projectIndex})">Удалить</button>
-                `;
-                testList.appendChild(testCard);
-            });
+card.innerHTML = `
+  <div class="flex items-center justify-between">
+    <div class="space-y-1">
+      <h2 class="text-lg font-semibold text-black">
+        ${project.name}
+      </h2>
 
-            projectContainer.appendChild(testList);
-        } else {
-            `Количество тестов: ${testCount}`
+      <div class="text-sm text-gray-500">
+        Платформы: ${
+          Array.isArray(project.platforms) && project.platforms.length
+            ? project.platforms.join(', ')
+            : '—'
         }
+      </div>
 
-        repositoryList.appendChild(projectContainer);
-    });
+      <div class="text-xs text-gray-400">
+        Тестов: ${tests.length}
+      </div>
+    </div>
+
+ <div class="repo-arrow text-gray-400 text-sm select-none">
+  ▶
+</div>
+  </div>
+`;
+
+    // container for tests (collapsed by default)
+const testsContainer = document.createElement('div');
+testsContainer.className = 'hidden mt-4 space-y-2';
+
+    if (tests.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'text-sm text-gray-400 px-2';
+      empty.textContent = 'В проекте нет тестов';
+      testsContainer.appendChild(empty);
+    } else {
+      tests.forEach(test => {
+        const item = document.createElement('div');
+        item.className =
+          'rounded-md border px-3 py-2 text-sm bg-gray-50';
+
+item.innerHTML = `
+  <div class="font-medium text-black">
+    ${test.name}
+  </div>
+  <div class="text-sm text-gray-500">
+    ${test.description || ''}
+  </div>
+`;
+
+        testsContainer.appendChild(item);
+      });
+    }
+
+    // toggle logic
+    card.onclick = () => {
+      const isOpen = !testsContainer.classList.contains('hidden');
+
+      // закрываем все остальные
+      document
+        .querySelectorAll('#repository-list .repo-tests')
+        .forEach(el => el.classList.add('hidden'));
+
+      document
+        .querySelectorAll('#repository-list .repo-arrow')
+        .forEach(el => (el.textContent = '▶'));
+
+      if (!isOpen) {
+        testsContainer.classList.remove('hidden');
+        arrow.textContent = '▼';
+      }
+    };
+
+    // arrow reference
+    const arrow = card.querySelector('.repo-arrow');
+    testsContainer.classList.add('repo-tests');
+    arrow.classList.add('repo-arrow');
+
+    wrapper.appendChild(card);
+    wrapper.appendChild(testsContainer);
+    container.appendChild(wrapper);
+  });
 }
 
-function updateFolderView() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const project = projects[currentProjectIndex];
-
-    if (!project || !project.folders) return;
-
-    // Очистка существующих папок
-    const folderContainers = document.querySelectorAll('.folder');
-    folderContainers.forEach(container => container.querySelector('.case-container').innerHTML = '');
-
-    project.folders.forEach(folder => {
-        const folderContainer = document.getElementById(`folder-${folder.id}-cases`);
-        if (folderContainer) {
-            folder.cases.forEach(folderTest => {
-                const caseElement = document.createElement('div');
-                caseElement.className = 'case';
-                caseElement.innerHTML = `<span>${folderTest.name}</span>`;
-                folderContainer.appendChild(caseElement);
-            });
-        }
-    });
-}
 
 
 function loadRuns() {
-    const runs = JSON.parse(localStorage.getItem('runs')) || [];
-    const runList = document.getElementById('run-list');
-    runList.innerHTML = '';
-    runs.forEach((run, index) => {
-        const totalTests = run.tests.length;
-        const completedTests = run.tests.filter(test => test.status !== 'unchecked').length;
-        const completionPercentage = Math.round((completedTests / totalTests) * 100);
+    normalizeRuns();
+  const runs = getRuns() || [];
+  const container = document.getElementById('runs-list');
+  if (!container) return;
 
-        // Статистика по статусам тестов
-        const statusCounts = {
-            checked: 0,
-            unchecked: 0,
-            error: 0,
-            retest: 0
-        };
-        run.tests.forEach(test => {
-            statusCounts[test.status]++;
-        });
+  container.innerHTML = '';
 
-        const runCard = document.createElement('div');
-        runCard.className = 'run-card';
-        runCard.id = run.id || '';
-        runCard.innerHTML = `
-            <h2>${run.projectName}</h2>
-            <div class="run-stats">
-                <p>Общее количество тестов: ${totalTests}</p>
-                <p>Проверено: ${statusCounts.checked}</p>
-                <p>Не проверено: ${statusCounts.unchecked}</p>
-                <p>Ошибка: ${statusCounts.error}</p>
-                <p>Ретест: ${statusCounts.retest}</p>
-                <p>Процент выполненных тестов: ${completionPercentage}%</p>
-            </div>
-            <div>
-                ${run.tests.map((test, testIndex) => `
-                    <div class="test-card ${test.status}">
-                        <h3>${test.name}</h3>
-                        <p>${test.description}</p>
-                        <p>Платформа: ${test.platform}</p>
-                        <select onchange="updateTestStatus(${index}, ${testIndex}, this.value)">
-                            <option value="unchecked" ${test.status === 'unchecked' ? 'selected' : ''}>Не проверено</option>
-                            <option value="checked" ${test.status === 'checked' ? 'selected' : ''}>Проверено</option>
-                            <option value="error" ${test.status === 'error' ? 'selected' : ''}>Ошибка</option>
-                            <option value="retest" ${test.status === 'retest' ? 'selected' : ''}>Ретест</option>
-                        </select>
-                    </div>
-                `).join('')}
-            </div>
-            <button onclick="finishRun(${index})">Завершить прогон</button>
-        `;
-        runList.appendChild(runCard);
-    });
-}
+  if (runs.length === 0) {
+    container.innerHTML = `
+      <div class="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">
+        Прогоны отсутствуют
+      </div>
+    `;
+    return;
+  }
 
+  runs.forEach(run => {
+    const tests = run.tests || [];
+    const total = tests.length;
 
-function updateTestStatus(runIndex, testIndex, newStatus) {
-    const runs = JSON.parse(localStorage.getItem('runs')) || [];
-    const run = runs[runIndex];
-    if (run) {
-        run.tests[testIndex].status = newStatus;
-        localStorage.setItem('runs', JSON.stringify(runs));
-        loadRuns(); // Перезагрузка списка прогонов после обновления статуса
-    } else {
-        console.error(`Прогон с индексом ${runIndex} не найден.`);
-    }
-}
-
-
-function countTestStatuses(tests) {
-    const statusCounts = {
-        checked: 0,
-        unchecked: 0,
-        error: 0,
-        retest: 0
+    const stats = {
+      checked: 0,
+      unchecked: 0,
+      error: 0,
+      retest: 0
     };
-    tests.forEach(test => {
-        statusCounts[test.status]++;
-    });
-    return Object.values(statusCounts);
-}
 
-function calculateCompletionPercentage(tests) {
-    const totalTests = tests.length;
-    const completedTests = tests.filter(test => test.status !== 'unchecked').length;
-    return Math.round((completedTests / totalTests) * 100);
-}
-
-function updateRunStatistics(runIndex) {
-    const run = JSON.parse(localStorage.getItem('runs'))[runIndex];
-    const totalTests = run.tests.length;
-    const completedTests = run.tests.filter(test => test.status !== 'unchecked').length;
-    const completionPercentage = Math.round((completedTests / totalTests) * 100);
-
-    // Статистика по статусам тестов
-    const statusCounts = {
-        checked: 0,
-        unchecked: 0,
-        error: 0,
-        retest: 0
-    };
-    run.tests.forEach(test => {
-        statusCounts[test.status]++;
+    tests.forEach(t => {
+      if (stats[t.status] !== undefined) {
+        stats[t.status]++;
+      }
     });
 
-    // Обновляем соответствующие элементы DOM с новыми данными
-    const runCard = document.getElementById(`run-${runIndex}`);
-    runCard.querySelector('.run-total-tests').textContent = `Общее количество тестов: ${totalTests}`;
-    runCard.querySelector('.run-checked-tests').textContent = `Проверено: ${statusCounts.checked}`;
-    runCard.querySelector('.run-unchecked-tests').textContent = `Не проверено: ${statusCounts.unchecked}`;
-    runCard.querySelector('.run-error-tests').textContent = `Ошибка: ${statusCounts.error}`;
-    runCard.querySelector('.run-retest-tests').textContent = `Ретест: ${statusCounts.retest}`;
-    runCard.querySelector('.run-completion-percentage').textContent = `Процент выполненных тестов: ${completionPercentage}%`;
+    const completed = total - stats.unchecked;
+    const percent = total === 0
+      ? 0
+      : Math.round((completed / total) * 100);
+
+    const card = document.createElement('div');
+    card.className =
+      'rounded-xl border bg-white p-4 space-y-4 hover:shadow-md transition';
+
+    card.innerHTML = `
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div>
+        <h2 class="font-medium text-black">
+  ${run.name || run.projectName}
+</h2>
+          <p class="text-sm text-gray-500">
+            Тестов: ${total}
+          </p>
+        </div>
+
+        <div class="text-sm text-gray-400">
+          ${percent}%
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="h-2 w-full rounded bg-gray-100 overflow-hidden">
+        <div
+          class="h-full bg-black transition-all"
+          style="width: ${percent}%"
+        ></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-4 gap-2 text-xs">
+        <div class="text-green-600">
+          Проверено: ${stats.checked}
+        </div>
+        <div class="text-red-600">
+          Ошибки: ${stats.error}
+        </div>
+        <div class="text-yellow-600">
+          Ретест: ${stats.retest}
+        </div>
+        <div class="text-gray-400">
+          Не проверено: ${stats.unchecked}
+        </div>
+      </div>
+    `;
+
+      card.onclick = () => openRun(run.id);
+      card.classList.add('cursor-pointer');
+
+    container.appendChild(card);
+  });
+}
+
+function saveRunName() {
+  const runs = getRuns() || [];
+  const run = runs.find(r => r.id === currentRunId);
+  if (!run) return;
+
+  const input = document.getElementById('run-name-input');
+  run.name = input.value.trim() || run.projectName;
+
+  setRuns(runs);
+  showToast('Название прогона обновлено', 'success');
 }
 
 
-function addRun() {
-    const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    if (projects.length === 0) {
-        alert('Сначала создайте хотя бы один проект.');
-        return;
-    }
+function openRunModal() {
+  const modal = document.getElementById('run-modal');
+  const select = document.getElementById('run-project-select');
 
-    const projectIndex = prompt(`Введите номер проекта (от 1 до ${projects.length}):`);
-    if (projectIndex && projectIndex > 0 && projectIndex <= projects.length) {
-        const project = projects[projectIndex - 1];
-        const runs = JSON.parse(localStorage.getItem('runs')) || [];
-        runs.push({ projectName: project.name, tests: project.tests.map(test => ({ ...test })) });
-        localStorage.setItem('runs', JSON.stringify(runs));
-        loadRuns();
-        showPage('runs');
-    }
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  select.innerHTML = '';
+
+  projects.forEach((project, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = project.name;
+    select.appendChild(option);
+  });
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
 }
 
-function finishRun(runIndex) {
-    const runs = JSON.parse(localStorage.getItem('runs'));
-    const finishedRun = runs.splice(runIndex, 1)[0];
-    let archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
-    archivedRuns.push(finishedRun);
-    localStorage.setItem('runs', JSON.stringify(runs));
-    localStorage.setItem('archivedRuns', JSON.stringify(archivedRuns));
-    loadRuns();
-    loadArchiveRuns();
+function closeRunModal() {
+  const modal = document.getElementById('run-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+function confirmAddRun() {
+  clearRunModalError();
+
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  if (projects.length === 0) {
+    showRunModalError('Нет доступных проектов');
+    return;
+  }
+
+  const select = document.getElementById('run-project-select');
+  const projectIndex = Number(select.value);
+  const project = projects[projectIndex];
+
+  if (!project || !project.tests || project.tests.length === 0) {
+    showRunModalError('В выбранном проекте нет тестов');
+    return;
+  }
+
+  const runs = getRuns() || [];
+
+const nameInput =
+  document.getElementById('run-name-create-input');
+
+const runName =
+  nameInput.value.trim() ||
+  `Run ${new Date().toLocaleDateString()}`;
+
+const run = {
+  id: 'run-' + Date.now(),
+  name: runName,                // 👈 ВАЖНО
+  projectName: project.name,
+  tests: project.tests.map(test => ({
+    ...test,
+    status: 'unchecked'
+  })),
+  createdAt: Date.now()
+};
+
+  runs.push(run);
+  setRuns(runs);
+
+  closeRunModal();
+  loadRuns();
+
+  normalizeRuns();
+
+  openRun(run.id); // 👈 сразу открываем прогон
+  nameInput.value = '';
+}
+
+let currentRunMode = 'active';
+
+function openRun(runId) {
+  const run =
+    getRuns().find(r => r.id === runId) ||
+    getArchivedRuns().find(r => r.id === runId);
+    renderRunDetail(run || archivedRun);
+ setActiveSidebar(run ? 'runs' : 'archive');
+
+  if (!run) {
+    showPage('runs');
+    return;
+  }
+
+  currentRunId = run.id;
+showPage('run-detail');
+renderRunDetail(run || archivedRun);
+setActiveSidebar(run.finishedAt ? 'archive' : 'runs');
+}
+
+function isArchivedRun(run) {
+  return Boolean(run.finishedAt);
+}
+
+function loadRunDetail() {
+  const runs = getRuns();
+  const archived = getArchivedRuns();
+
+  // ищем и в активных, и в архиве
+  let run = runs.find(r => r.id === currentRunId);
+  const isArchived = !run;
+
+  if (!run) {
+    run = archived.find(r => r.id === currentRunId);
+  }
+
+  if (!run) {
+    console.error('Run not found:', currentRunId);
+    showPage('runs');
+    return;
+  }
+
+  // заголовок
+  document.getElementById('run-project-name').textContent =
+    run.projectName;
+
+  const container = document.getElementById('run-tests');
+  container.innerHTML = '';
+
+  if (!run.tests || run.tests.length === 0) {
+    container.innerHTML = `
+      <div class="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">
+        В прогоне нет кейсов
+      </div>
+    `;
+    return;
+  }
+
+ run.tests.map(normalizeTest).forEach((test, index) => {
+    const row = document.createElement('div');
+
+    row.className = `
+      rounded-xl border p-4
+      flex items-center justify-between gap-4
+      ${isArchived ? 'bg-gray-50 opacity-80' : 'bg-white'}
+    `;
+
+    row.innerHTML = `
+      <div class="flex-1">
+        <div class="font-medium text-black">
+          ${test.name}
+        </div>
+        <div class="text-sm text-gray-500">
+          ${test.description || ''}
+        </div>
+      </div>
+
+      ${
+        isArchived
+          ? `<span class="text-sm text-gray-500">${statusLabel(test.status)}</span>`
+          : `
+            <select
+              class="rounded-md border px-2 py-1 text-sm"
+              onchange="updateRunTestStatus(${index}, this.value)"
+            >
+              <option value="unchecked" ${test.status === 'unchecked' ? 'selected' : ''}>⏳ Не проверен</option>
+              <option value="checked" ${test.status === 'checked' ? 'selected' : ''}>✔ Успешно</option>
+              <option value="error" ${test.status === 'error' ? 'selected' : ''}>✖ Ошибка</option>
+              <option value="retest" ${test.status === 'retest' ? 'selected' : ''}>🔁 Перепроверка</option>
+            </select>
+          `
+      }
+    `;
+
+    container.appendChild(row);
+  });
+
+  // кнопка завершения — только для активных
+const finishBtn = document.getElementById('finish-run-btn');
+if (finishBtn) {
+  finishBtn.classList.toggle(
+    'hidden',
+    currentRunMode === 'archived'
+  );
+}
+}
+
+function statusLabel(status) {
+  switch (status) {
+    case 'checked': return '✔ Успешно';
+    case 'error': return '✖ Ошибка';
+    case 'retest': return '🔁 Ретест';
+    default: return '⏳ Не проверен';
+  }
+}
+
+
+function finishCurrentRun() {
+  const runs = getRuns() || [];
+  const archived = JSON.parse(localStorage.getItem('archivedRuns')) || [];
+
+  const index = runs.findIndex(r => r.id === currentRunId);
+  if (index === -1) return;
+
+  const run = runs.splice(index, 1)[0];
+  run.finishedAt = Date.now();
+
+  archived.push(run);
+
+  setRuns(runs);
+  localStorage.setItem('archivedRuns', JSON.stringify(archived));
+
+  loadRuns();
+  loadArchiveRuns(); // ← 🔥 КЛЮЧЕВО
+  showToast('Прогон завершён', 'info');
+  showPage('runs');
+}
+
+
+function normalizeRuns() {
+  const runs = getRuns() || [];
+  let changed = false;
+
+  runs.forEach(run => {
+    if (!run.id) {
+      run.id = 'run-' + Date.now() + Math.random().toString(16).slice(2);
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    setRuns(runs);
+  }
+}
+
+function normalizeTest(test) {
+  return {
+    name: test.name || 'Без названия',
+    description: test.description || '',
+    platform: test.platform || [],
+    status: test.status || 'unchecked'
+  };
+}
+
+function renderRunDetail(run) {
+  const archived = isArchivedRun(run);
+
+  // name
+  const nameInput = document.getElementById('run-name-input');
+  nameInput.value = run.name || run.projectName;
+  nameInput.disabled = archived;
+
+  // project
+  document.getElementById('run-project-name').textContent =
+    run.projectName;
+
+  // buttons
+  document.getElementById('finish-run-btn').style.display =
+    archived ? 'none' : 'inline-flex';
+
+  document.getElementById('edit-run-btn').style.display =
+    archived ? 'none' : 'inline-flex';
+
+  // tests
+  renderRunTests(run, archived);
+}
+
+function renderRunTestsEditor() {
+  const runs = getRuns() || [];
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+  const run = runs.find(r => r.id === currentRunId);
+  if (!run) return;
+
+  const project = projects.find(p => p.name === run.projectName);
+  if (!project) return;
+
+  const container = document.getElementById('run-tests-editor');
+  container.innerHTML = '';
+
+  project.tests.forEach(test => {
+    const checked = run.tests.some(t => t.name === test.name);
+
+    container.innerHTML += `
+      <label class="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          data-test-name="${test.name}"
+          ${checked ? 'checked' : ''}
+        />
+        ${test.name}
+      </label>
+    `;
+  });
+}
+
+function saveRunTests() {
+  const runs = getRuns() || [];
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+  const run = runs.find(r => r.id === currentRunId);
+  const project = projects.find(p => p.name === run.projectName);
+  if (!run || !project) return;
+
+  const selected = Array.from(
+    document.querySelectorAll('#run-tests-editor input:checked')
+  ).map(i => i.dataset.testName);
+
+  run.tests = project.tests
+    .filter(t => selected.includes(t.name))
+    .map(t => ({
+      ...t,
+      status: 'unchecked'
+    }));
+
+  setRuns(runs);
+  loadRunDetail();
+  showToast('Кейсы обновлены', 'success');
+}
+
+function renderRunTests(run, archived) {
+  const container = document.getElementById('run-tests');
+  container.innerHTML = '';
+
+  if (!run.tests.length) {
+    container.innerHTML = `
+      <div class="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">
+        Нет кейсов
+      </div>
+    `;
+    return;
+  }
+
+  run.tests.forEach((test, index) => {
+    const row = document.createElement('div');
+    row.className =
+      'rounded-xl border p-4 flex items-center justify-between';
+
+    row.innerHTML = `
+      <div>
+        <div class="font-medium">${test.name}</div>
+        <div class="text-sm text-gray-500">${test.description || ''}</div>
+      </div>
+
+      ${
+        archived
+          ? `<span class="text-sm text-gray-500">${statusLabel(test.status)}</span>`
+          : `
+            <select
+              class="rounded-md border px-2 py-1 text-sm"
+              onchange="updateRunTestStatus(${index}, this.value)"
+            >
+              <option value="unchecked" ${test.status === 'unchecked' ? 'selected' : ''}>⏳ Не проверен</option>
+              <option value="checked" ${test.status === 'checked' ? 'selected' : ''}>✔ Проверен</option>
+              <option value="error" ${test.status === 'error' ? 'selected' : ''}>✖ Ошибка</option>
+              <option value="retest" ${test.status === 'retest' ? 'selected' : ''}>🔁 Ретест</option>
+            </select>
+          `
+      }
+    `;
+
+    container.appendChild(row);
+  });
+}
+
+function finishCurrentRun() {
+  const runs = getRuns();
+  const archived = getArchivedRuns();
+
+  const index = runs.findIndex(r => r.id === currentRunId);
+  if (index === -1) return;
+
+  const run = runs.splice(index, 1)[0];
+  run.finishedAt = Date.now();
+
+  archived.push(run);
+
+  setRuns(runs);
+  setArchivedRuns(archived);
+
+  showPage('runs');
+  loadRuns();
+  loadArchiveRuns();
 }
 
 function loadArchiveRuns() {
-    const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
-    const archiveList = document.getElementById('archive-list');
-    archiveList.innerHTML = '';
-    archivedRuns.forEach((run, index) => {
-        const runCard = document.createElement('div');
-        runCard.className = 'run-card';
-        runCard.innerHTML = `
-            <h2>${run.projectName}</h2>
-            <div>
-                ${run.tests.map((test, testIndex) => `
-                    <div class="test-card ${test.status}">
-                        <h3>${test.name}</h3>
-                        <p>${test.description}</p>
-                        <p>Платформа: ${test.platform}</p>
-                        <select disabled>
-                            <option value="unchecked" ${test.status === 'unchecked' ? 'selected' : ''}>Не проверено</option>
-                            <option value="checked" ${test.status === 'checked' ? 'selected' : ''}>Проверено</option>
-                            <option value="error" ${test.status === 'error' ? 'selected' : ''}>Ошибка</option>
-                            <option value="retest" ${test.status === 'retest' ? 'selected' : ''}>Ретест</option>
-                        </select>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        archiveList.appendChild(runCard);
+  const archivedRuns =
+    JSON.parse(localStorage.getItem('archivedRuns')) || [];
+
+  const list = document.getElementById('archive-list');
+  const empty = document.getElementById('archive-empty');
+
+  if (!list || !empty) return;
+
+  list.innerHTML = '';
+
+  if (archivedRuns.length === 0) {
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+
+  archivedRuns.forEach(run => {
+    const tests = run.tests || [];
+    const total = tests.length;
+
+    const stats = {
+      checked: 0,
+      unchecked: 0,
+      error: 0,
+      retest: 0
+    };
+
+    tests.forEach(t => {
+      if (stats[t.status] !== undefined) {
+        stats[t.status]++;
+      }
     });
+
+    const completed = total - stats.unchecked;
+    const percent = total === 0
+      ? 0
+      : Math.round((completed / total) * 100);
+
+    const date = run.finishedAt
+      ? new Date(run.finishedAt).toLocaleDateString()
+      : '—';
+
+   const card = document.createElement('div');
+card.classList.add('cursor-pointer');
+card.onclick = () => openRun(run.id);
+    card.className =
+      'rounded-xl border bg-white p-4 space-y-4 opacity-90';
+
+    card.innerHTML = `
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-medium text-black">
+            ${run.name || run.projectName}
+          </h3>
+          <p class="text-sm text-gray-500">
+            ${run.projectName} · ${date}
+          </p>
+        </div>
+
+        <div class="text-sm text-gray-400">
+          ${percent}%
+        </div>
+      </div>
+
+      <div class="h-2 w-full rounded bg-gray-100 overflow-hidden">
+        <div
+          class="h-full bg-black"
+          style="width: ${percent}%"
+        ></div>
+      </div>
+
+      <div class="flex flex-wrap gap-2 text-xs">
+        <span class="rounded-md bg-green-100 px-2 py-1 text-green-700">
+          ${stats.checked} passed
+        </span>
+        <span class="rounded-md bg-red-100 px-2 py-1 text-red-700">
+          ${stats.error} errors
+        </span>
+        <span class="rounded-md bg-yellow-100 px-2 py-1 text-yellow-700">
+          ${stats.retest} retest
+        </span>
+        <span class="rounded-md bg-gray-100 px-2 py-1 text-gray-600">
+          ${stats.unchecked} skipped
+        </span>
+      </div>
+    `;
+
+    list.appendChild(card);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   loadProjects();
   loadArchiveRuns();
+  initializePlatformSelection();
 
   if (!isAuthenticated()) {
     showPage('login-page');
@@ -1133,7 +1665,7 @@ function showToast(message, type = 'info') {
 function exportData() {
     // Собираем данные из localStorage
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
-    const runs = JSON.parse(localStorage.getItem('runs')) || [];
+    const runs = getRuns() || [];
     const archivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
 
     // Создаем объект для экспорта
@@ -1175,7 +1707,7 @@ function importData(event) {
             if (jsonData.projects && jsonData.runs && jsonData.archivedRuns) {
                 // Считываем текущие данные из localStorage
                 const currentProjects = JSON.parse(localStorage.getItem('projects')) || [];
-                const currentRuns = JSON.parse(localStorage.getItem('runs')) || [];
+                const currentRuns = getRuns() || [];
                 const currentArchivedRuns = JSON.parse(localStorage.getItem('archivedRuns')) || [];
 
                 // Объединяем текущие данные с импортированными
@@ -1291,7 +1823,7 @@ function renderLatestProjects(limit = 3) {
 }
 
 function renderLatestRuns(limit = 3) {
-  const runs = JSON.parse(localStorage.getItem('runs')) || [];
+  const runs = getRuns() || [];
   const container = document.getElementById('dashboard-latest-runs');
 
   if (!container) return;
@@ -1352,6 +1884,21 @@ function renderLatestRuns(limit = 3) {
   });
 }
 
+function showRunModalError(message) {
+  const el = document.getElementById('run-modal-error');
+  if (!el) return;
+
+  el.textContent = message;
+  el.classList.remove('hidden');
+}
+
+function clearRunModalError() {
+  const el = document.getElementById('run-modal-error');
+  if (!el) return;
+
+  el.textContent = '';
+  el.classList.add('hidden');
+}
 
 function highlightRunFromDashboard() {
   const runId = localStorage.getItem('highlightRunId');

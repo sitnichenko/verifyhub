@@ -2,6 +2,10 @@
     display: none;
 }
 
+html {
+  overflow-y: scroll;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -370,6 +374,26 @@ body {
     padding: 5px;
     margin: 5px 0;
     border-radius: 4px;
+}
+
+.run-test.unchecked {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+.run-test.checked {
+  background-color: #ecfdf5;
+  border-color: #34d399;
+}
+
+.run-test.error {
+  background-color: #fef2f2;
+  border-color: #f87171;
+}
+
+.run-test.retest {
+  background-color: #fffbeb;
+  border-color: #facc15;
 }
 
 

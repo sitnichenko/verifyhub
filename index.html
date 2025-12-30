@@ -111,10 +111,13 @@
     <!-- Container -->
 <div id="main-container" class="ml-64 p-6 transition-all duration-300">
 
-        <div id="account" class="page hidden">
-            <h1>Управление аккаунтом</h1>
-            <button id="logout-button" class="custom-button">Выйти из аккаунта</button>
+  <div id="account" class="page hidden space-y-6">
+    <h1 class="text-2xl font-semibold tracking-tight">
+      Управление аккаунтом
+    </h1>
+  <button id="logout-button" class="rounded-md bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90">Выйти из аккаунта</button>
         </div>
+           
 
 <div id="dashboard" class="page hidden space-y-6">
 
@@ -179,94 +182,217 @@
   </div>
 
 
+<div id="projects" class="page hidden space-y-6">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Projects</h1>
+    <p class="text-sm text-gray-500">Все ваши проекты</p>
+  </div>
 
-        <div id="projects" class="page hidden">
-            <h1>Список проектов</h1>
-            <div class="buttons">
-                <button class="custom-button" onclick="addProject()">Добавить проект</button>
-            </div>
-            <div id="project-list">
-                <div class="project-card">
-                    <h2>Project Name</h2>
-                    <p>Description of the project goes here.</p>
-                    <div class="project-meta">
-                        <span>Platform: Web</span>
-                        <span>Tests: 30</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="flex justify-end">
+    <button
+      class="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-black/90"
+      onclick="addProject()"
+    >
+      + Новый проект
+    </button>
+  </div>
+
+  <div
+    id="project-list"
+    class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+  ></div>
+</div>
         
-        <div id="project-detail" class="page hidden">
-            <div class="content-container">
-                <div class="folders-sidebar">
-                <ul class="test-suites">
-                    <li class="suite">
-                        <div class="suite-title">
-                            <span class="suite-icon">📁</span>
-                            <span>Untitled</span>
-                        </div>
-                        <ul class="sub-suites">
-                            <li>Authorization</li>
-                        </ul>
-                    </li>
-                </ul>
-                </div>
-                <!-- Остальные данные -->
-                <div class="project-details">
-                    <h1 id="project-name"></h1>
-                    <p id="project-description"></p>
-                    <p id="project-platform"></p>
-                    <p id="test-count"></p>
-                    <div id="test-list"></div>
-                    <button class="custom-button" onclick="addTest()">Добавить тест</button>
-                    <button class="custom-button" onclick="showPage('projects')">Назад к проектам</button>
-                </div>
-            </div>
-        </div>
+        <div id="project-detail" class="page hidden space-y-6">
 
-        <div id="add-project" class="page hidden">
-            <h1>Добавить проект</h1>
-            <!-- форма добавления проекта -->
-        </div>
+  <!-- Header -->
+  <div>
+    <h1 id="project-name" class="text-2xl font-semibold tracking-tight"></h1>
+    <p id="project-description" class="text-sm text-gray-500"></p>
+    <p id="project-platform" class="mt-1 text-xs text-gray-400"></p>
+  </div>
 
-        <div id="repository" class="page hidden">
-            <div class="content-container">
-                <div class="folders-sidebar">
-                <ul class="test-suites">
-                    <li class="suite">
-                        <div class="suite-title">
-                            <span class="suite-icon">📁</span>
-                            <span>Untitled</span>
-                        </div>
-                        <ul class="sub-suites">
-                            <li>test</li>
-                        </ul>
-                    </li>
-                </ul>
-                </div>
+  <!-- Content -->
+  <div class="grid grid-cols-12 gap-6">
 
-                <!-- Остальные данные -->
-                <div class="repository-details">
-                    <h1>Репозиторий тестов</h1>
-                    <div id="repository-list"></div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="runs" class="page hidden">
-            <h1>Прогоны</h1>
-            <div class="buttons">
-                <button class="custom-button" onclick="addRun()">Создать прогон</button>
-            </div>
-            <div id="run-list"></div>
-        </div>
 
-        <div id="archive" class="page hidden">
-            <h1>Архив прогонов</h1>
-            <div id="archive-list"></div>
-        </div>
+    <!-- Tests -->
+    <section class="col-span-9 space-y-4">
+
+      <div class="flex items-center justify-between">
+        <div id="test-count" class="text-sm text-gray-500"></div>
+
+        <button
+          class="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-black/90"
+          onclick="addTest()"
+        >
+          + Добавить тест
+        </button>
+      </div>
+
+      <div id="test-list" class="space-y-2">
+        <!-- тесты -->
+      </div>
+
+      <div class="rounded-xl border bg-white p-3">
+  <input
+    id="quick-test-input"
+    type="text"
+    placeholder="Название тест-кейса"
+    class="w-full rounded-md border px-3 py-2 text-sm
+           outline-none focus:ring-2 focus:ring-black"
+  />
+
+  <div class="mt-2 flex justify-end">
+    <button
+      class="rounded-md bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90"
+      onclick="quickAddTest()"
+    >
+      Добавить тест
+    </button>
+  </div>
+</div>
+
+      <button
+        class="text-sm text-gray-500 hover:text-black"
+        onclick="showPage('projects')"
+      >
+        Назад к проектам
+      </button>
+
+    </section>
+
+  </div>
+</div>
+
+
+<div id="repository" class="page hidden space-y-6">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Repository</h1>
+    <p class="text-sm text-gray-500">
+      Все ваши тесты
+    </p>
+  </div>
+
+  <!-- List -->
+  <div id="repository-list" class="space-y-6"></div>
+  </div>
+     
+<div id="runs" class="page hidden space-y-6">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Runs</h1>
+    <p class="text-sm text-gray-500">
+      Активные прогоны тестирования
+    </p>
+  </div>
+
+  <div class="flex justify-end">
+    <button
+      class="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-black/90"
+      onclick="openRunModal()"
+    >
+      ▶ Начать прогон
+    </button>
+  </div>
+
+  <div id="runs-list" class="space-y-6"></div>
+</div>
+
+
+<div id="run-detail" class="page hidden space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <input
+        id="run-name-input"
+        class="text-2xl font-semibold tracking-tight border-none outline-none"
+        placeholder="Название прогона"
+      />
+      <p id="run-project-name" class="text-sm text-gray-500"></p>
     </div>
+
+    <div class="flex gap-2">
+      <button
+        id="edit-run-btn"
+        class="rounded-md border px-3 py-1.5 text-sm"
+      >
+        Редактировать кейсы
+      </button>
+
+      <button
+        id="finish-run-btn"
+        class="rounded-md bg-black px-3 py-1.5 text-sm text-white"
+      >
+        Завершить прогон
+      </button>
+    </div>
+  </div>
+
+  <!-- Tests -->
+  <div id="run-tests" class="space-y-2"></div>
+
+  <button
+    class="text-sm text-gray-500 hover:text-black"
+    onclick="showPage('runs')"
+  >
+    ← Назад
+  </button>
+</div>
+
+
+<div id="archive" class="page hidden space-y-6">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">
+      Archive
+    </h1>
+    <p class="text-sm text-gray-500">
+      Завершённые прогоны тестирования
+    </p>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+    <div class="flex gap-2 w-full sm:w-auto">
+      <!-- Search -->
+      <input
+        type="text"
+        placeholder="Поиск по названию"
+        class="w-full sm:w-64 rounded-md border px-3 py-2 text-sm
+               focus:ring-2 focus:ring-black outline-none"
+      />
+
+      <!-- Project filter -->
+      <select
+        class="rounded-md border px-3 py-2 text-sm bg-white"
+      >
+        <option>Все проекты</option>
+        <option>Mobile App</option>
+      </select>
+    </div>
+
+  </div>
+
+<div id="archive-list" class="space-y-4"></div>
+
+<div
+  id="archive-empty"
+  class="hidden rounded-xl border bg-white p-12 text-center"
+>
+  <h3 class="font-medium">
+    Архив пуст
+  </h3>
+  <p class="text-sm text-gray-500 mt-2">
+    Завершите хотя бы один прогон, чтобы он появился здесь
+  </p>
+</div>
+</div>
+</div>
 
 
     <div id="add-project-modal" class="modal">
@@ -602,6 +728,55 @@
     </button>
   </div>
 </div>
+
+<div
+  id="run-modal"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50"
+>
+  <div class="w-full max-w-md rounded-xl bg-white p-6 space-y-4">
+
+    <h2 class="text-lg font-semibold">
+      Новый прогон
+    </h2>
+
+    <div class="space-y-2">
+      <label class="text-sm text-gray-500">Проект</label>
+      <select
+        id="run-project-select"
+        class="w-full rounded-md border px-3 py-2 text-sm"
+      ></select>
+    </div>
+
+    <div class="space-y-2">
+      <label class="text-sm text-gray-500">Название прогона</label>
+      <input
+        id="run-name-create-input"
+        placeholder="Regression / Smoke / Sprint"
+        class="w-full rounded-md border px-3 py-2 text-sm"
+      />
+    </div>
+
+    <div class="flex justify-end gap-2 pt-4">
+      <button
+        onclick="closeRunModal()"
+        class="rounded-md border px-3 py-1.5 text-sm"
+      >
+        Отмена
+      </button>
+
+      <button
+        onclick="confirmAddRun()"
+        class="rounded-md bg-black px-4 py-1.5 text-sm text-white"
+      >
+        Создать
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+
 
 
     <script src="script.js"></script>
