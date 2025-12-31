@@ -61,8 +61,12 @@ function showPage(pageId) {
   if (pageId === 'repository') {
   loadRepository();
 }
+if (pageId === 'archive') {
+  loadArchiveRuns();
+}
 
   setActiveSidebar(pageId);
+  normalizeAllRuns();
 }
 window.showPage = showPage;
 
@@ -84,6 +88,7 @@ window.showPage = showPage;
 const USERNAME = '1';
 const PASSWORD = '1';
 let currentRunId = null;
+let currentRunSource = 'runs'; // 'runs' | 'archive'
 
 function isAuthenticated() {
     const token = localStorage.getItem('authToken');
@@ -142,37 +147,49 @@ function setArchivedRuns(runs) {
   localStorage.setItem('archivedRuns', JSON.stringify(runs));
 }
 
+function formatPlatforms(platforms) {
+  if (!Array.isArray(platforms) || platforms.length === 0) {
+    return '—';
+  }
+
+  return platforms
+    .map(p => capitalize(p))
+    .join(', ');
+}
+
 function updateDashboardStats() {
-  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  const projects =
+    JSON.parse(localStorage.getItem('projects')) || [];
+
   const runs = getRuns() || [];
 
-  // Проекты
-  const projectsCount = projects.length;
+  let totalTests = 0;
+  let totalFailed = 0;
 
-  // Все тесты во всех проектах
-  const testsCount = projects.reduce((sum, project) => {
-    return sum + (project.tests ? project.tests.length : 0);
-  }, 0);
-
-  // Прогоны
-  const runsCount = runs.length;
-
-  // Ошибки (error в активных прогонах)
-  let errorsCount = 0;
-  runs.forEach(run => {
-    run.tests.forEach(test => {
-      if (test.status === 'error') {
-        errorsCount++;
-      }
-    });
+  // ✅ кейсы — ТОЛЬКО из проектов
+  projects.forEach(project => {
+    totalTests += project.tests?.length || 0;
   });
 
-  // Рендер
-  document.getElementById('dashboard-projects').textContent = projectsCount;
-  document.getElementById('dashboard-tests').textContent = testsCount;
-  document.getElementById('dashboard-runs').textContent = runsCount;
-  document.getElementById('dashboard-errors').textContent = errorsCount;
+  // ✅ ошибки — из активных прогонов
+  runs.forEach(run => {
+    const stats = calculateRunStats(run);
+    totalFailed += stats.failed;
+  });
+
+  document.getElementById('dashboard-projects').textContent =
+    projects.length;
+
+  document.getElementById('dashboard-tests').textContent =
+    totalTests;
+
+  document.getElementById('dashboard-runs').textContent =
+    runs.length;
+
+  document.getElementById('dashboard-errors').textContent =
+    totalFailed;
 }
+
 
 
 
@@ -225,7 +242,11 @@ function loadProjects() {
       </div>
 
       <div class="mt-4 text-xs text-gray-400 space-y-1">
-        <div>Платформы: ${platforms}</div>
+       <div class="text-xs text-gray-400">
+      ${project.platforms?.length
+        ? `Платформы: ${project.platforms.join(', ')}`
+        : 'Платформы не выбраны'}
+    </div>
         <div>Тестов: ${testsCount}</div>
       </div>
 
@@ -373,12 +394,36 @@ function resetForm() {
     document.getElementById('project-description-error').textContent = '';
 }
 
+function normalizeStatus(status) {
+  if (status === 'checked') return STATUS.PASSED;
+  if (status === 'error') return STATUS.FAILED;
+  if (status === 'passed') return STATUS.PASSED;
+  if (status === 'failed') return STATUS.FAILED;
 
-// Функция для переключения выбора плитки платформ
-function toggleTileSelection() {
-    this.classList.toggle('selected');
+  return Object.values(STATUS).includes(status)
+    ? status
+    : STATUS.UNCHECKED;
 }
 
+function normalizeRunsArray(runs) {
+  runs.forEach(run => {
+    run.tests.forEach(test => {
+      test.status = normalizeStatus(test.status);
+      test.history ??= [];
+    });
+  });
+}
+
+function normalizeAllRuns() {
+  const runs = getRuns() || [];
+  const archived = getArchivedRuns() || [];
+
+  normalizeRunsArray(runs);
+  normalizeRunsArray(archived);
+
+  setRuns(runs);
+  setArchivedRuns(archived);
+}
 
 function editProject(index) {
     const modal = document.getElementById('edit-project-modal');
@@ -461,34 +506,41 @@ function editProject(index) {
 
 
 function deleteProject(index) {
-    const projects = JSON.parse(localStorage.getItem('projects'));
-    projects.splice(index, 1);
-    localStorage.setItem('projects', JSON.stringify(projects));
-    loadProjects();
-    showToast('Проект успешно удалён', 'warning');
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+  if (!projects[index]) return;
+
+  projects.splice(index, 1);
+  localStorage.setItem('projects', JSON.stringify(projects));
+
+  loadProjects();
+  showToast('Проект успешно удалён', 'warning');
 }
 
 
 function viewProject(index) {
-    currentProjectIndex = index;
-    const projects = JSON.parse(localStorage.getItem('projects'));
-    const project = projects[index];
-    
-    if (!project) {
-        console.error('Проект не найден.');
-        return;
-    }
-    
-    document.getElementById('project-name').textContent = project.name;
-    document.getElementById('project-description').textContent = project.description;
-    
-    const platformText = project.platforms.length > 0 ? `Платформы: ${project.platforms.join(', ')}` : 'Платформы не выбраны';
-    document.getElementById('project-platform').textContent = platformText;
-    
-    loadTests(); // Загрузка тестов для текущего проекта
-    showPage('project-detail');
-    setActiveSidebar('projects'); // 👈 ВАЖНО
+  const projects = JSON.parse(localStorage.getItem('projects')) || [];
+  const project = projects[index];
 
+  if (!project) {
+    console.error('Проект не найден.');
+    return;
+  }
+
+  currentProjectIndex = index;
+
+  document.getElementById('project-name').textContent = project.name;
+  document.getElementById('project-description').textContent =
+    project.description || '';
+
+  document.getElementById('project-platform').textContent =
+    project.platforms?.length
+      ? `Платформы: ${project.platforms.join(', ')}`
+      : 'Платформы не выбраны';
+
+  loadTests();
+  showPage('project-detail');
+  setActiveSidebar('projects');
 }
 
 function openProject(projectId) {
@@ -530,7 +582,7 @@ function loadTests() {
         <div class="font-medium">${test.name}</div>
         <div class="text-sm text-gray-500">${test.description || ''}</div>
         <div class="text-xs text-gray-400">
-          Платформы: ${Array.isArray(test.platform) ? test.platform.join(', ') : test.platform}
+          Платформы: ${formatPlatforms(test.platform)}
         </div>
       </div>
 
@@ -840,21 +892,6 @@ function editTest(testIndex, projectIndex) {
     }
 }
 
-function updateTestInProjectDOM(testIndex, projectIndex, updatedTest) {
-    const projectContainers = document.querySelectorAll('.project-container');
-    const testCards = projectContainers[projectIndex]?.querySelectorAll('.test-card');
-
-    if (testCards && testCards[testIndex]) {
-        const testCard = testCards[testIndex];
-        testCard.innerHTML = `
-            <h3>${updatedTest.name}</h3>
-            <p>${updatedTest.description}</p>
-            <p>Платформа: ${updatedTest.platform.join(', ')}</p>
-            <button onclick="editTest(${testIndex}, ${projectIndex})">Редактировать</button>
-            <button onclick="deleteTest(${testIndex}, ${projectIndex})">Удалить</button>
-        `;
-    }
-}
 
 function deleteTest(testIndex, projectIndex) {
     // Установка currentProjectIndex на индекс текущего проекта
@@ -1005,7 +1042,8 @@ item.innerHTML = `
 
 
 function loadRuns() {
-    normalizeRuns();
+  normalizeRuns();
+
   const runs = getRuns() || [];
   const container = document.getElementById('runs-list');
   if (!container) return;
@@ -1022,45 +1060,26 @@ function loadRuns() {
   }
 
   runs.forEach(run => {
-    const tests = run.tests || [];
-    const total = tests.length;
-
-    const stats = {
-      checked: 0,
-      unchecked: 0,
-      error: 0,
-      retest: 0
-    };
-
-    tests.forEach(t => {
-      if (stats[t.status] !== undefined) {
-        stats[t.status]++;
-      }
-    });
-
-    const completed = total - stats.unchecked;
-    const percent = total === 0
-      ? 0
-      : Math.round((completed / total) * 100);
+    const stats = calculateRunStats(run);
 
     const card = document.createElement('div');
     card.className =
-      'rounded-xl border bg-white p-4 space-y-4 hover:shadow-md transition';
+      'rounded-xl border bg-white p-4 space-y-4 hover:shadow-md transition cursor-pointer';
 
     card.innerHTML = `
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-        <h2 class="font-medium text-black">
-  ${run.name || run.projectName}
-</h2>
+          <h2 class="font-medium text-black">
+            ${run.name || run.projectName}
+          </h2>
           <p class="text-sm text-gray-500">
-            Тестов: ${total}
+            Тестов: ${stats.total}
           </p>
         </div>
 
         <div class="text-sm text-gray-400">
-          ${percent}%
+          ${stats.percent}%
         </div>
       </div>
 
@@ -1068,46 +1087,46 @@ function loadRuns() {
       <div class="h-2 w-full rounded bg-gray-100 overflow-hidden">
         <div
           class="h-full bg-black transition-all"
-          style="width: ${percent}%"
+          style="width: ${stats.percent}%"
         ></div>
       </div>
 
       <!-- Stats -->
-      <div class="grid grid-cols-4 gap-2 text-xs">
-        <div class="text-green-600">
-          Проверено: ${stats.checked}
-        </div>
-        <div class="text-red-600">
-          Ошибки: ${stats.error}
-        </div>
-        <div class="text-yellow-600">
+<div class="flex flex-wrap gap-2 text-xs">
+        <span class="rounded-md bg-green-100 px-2 py-1 text-green-700">
+          Проверено: ${stats.passed}
+        </span>
+        <span class="rounded-md bg-red-100 px-2 py-1 text-red-700">
+          Ошибки: ${stats.failed}
+        </span>
+        <span class="rounded-md bg-yellow-100 px-2 py-1 text-yellow-700">
           Ретест: ${stats.retest}
-        </div>
-        <div class="text-gray-400">
+        </span>
+        <span class="rounded-md bg-gray-100 px-2 py-1 text-gray-600">
           Не проверено: ${stats.unchecked}
-        </div>
+        </span>
       </div>
     `;
 
-      card.onclick = () => openRun(run.id);
-      card.classList.add('cursor-pointer');
-
+    card.onclick = () => openRun(run.id);
     container.appendChild(card);
   });
 }
 
-function saveRunName() {
-  const runs = getRuns() || [];
-  const run = runs.find(r => r.id === currentRunId);
-  if (!run) return;
 
-  const input = document.getElementById('run-name-input');
-  run.name = input.value.trim() || run.projectName;
-
-  setRuns(runs);
-  showToast('Название прогона обновлено', 'success');
+function showRunModalError(message) {
+  const el = document.getElementById('run-modal-error');
+  if (!el) return;
+  el.textContent = message;
+  el.classList.remove('hidden');
 }
 
+function clearRunModalError() {
+  const el = document.getElementById('run-modal-error');
+  if (!el) return;
+  el.textContent = '';
+  el.classList.add('hidden');
+}
 
 function openRunModal() {
   const modal = document.getElementById('run-modal');
@@ -1183,14 +1202,17 @@ const run = {
   nameInput.value = '';
 }
 
-let currentRunMode = 'active';
-
 function openRun(runId) {
-  const run =
-    getRuns().find(r => r.id === runId) ||
-    getArchivedRuns().find(r => r.id === runId);
-    renderRunDetail(run || archivedRun);
- setActiveSidebar(run ? 'runs' : 'archive');
+  const runs = getRuns() || [];
+  const archived = getArchivedRuns() || [];
+
+  let run = runs.find(r => r.id === runId);
+  let source = 'runs';
+
+  if (!run) {
+    run = archived.find(r => r.id === runId);
+    source = 'archive';
+  }
 
   if (!run) {
     showPage('runs');
@@ -1198,125 +1220,187 @@ function openRun(runId) {
   }
 
   currentRunId = run.id;
+  currentRunSource = source;
+
   showPage('run-detail');
- renderRunDetail(run || archivedRun);
-setActiveSidebar(run.finishedAt ? 'archive' : 'runs');
+  setActiveSidebar(source);
+
+  renderRunDetail(run);
 }
 
-function isArchivedRun(run) {
-  return Boolean(run.finishedAt);
+function goBackFromRun() {
+  showPage(currentRunSource || 'runs');
 }
 
-function loadRunDetail() {
-  const runs = getRuns();
-  const archived = getArchivedRuns();
+function calculateRunStats(run) {
+  const stats = {
+    passed: 0,
+    failed: 0,
+    retest: 0,
+    unchecked: 0,
+    total: run.tests.length
+  };
 
-  // ищем и в активных, и в архиве
-  let run = runs.find(r => r.id === currentRunId);
-  const isArchived = !run;
+  run.tests.forEach(test => {
+    const status = normalizeStatus(test.status);
+    stats[status]++;
+  });
 
-  if (!run) {
-    run = archived.find(r => r.id === currentRunId);
-  }
+  stats.completed =
+    stats.passed + stats.failed + stats.retest;
 
-  if (!run) {
-    console.error('Run not found:', currentRunId);
-    showPage('runs');
-    return;
-  }
+  stats.percent = stats.total === 0
+    ? 0
+    : Math.round((stats.completed / stats.total) * 100);
 
-  // заголовок
-  document.getElementById('run-project-name').textContent =
-    run.projectName;
+  return stats;
+}
 
+function renderRunTests(run, archived) {
   const container = document.getElementById('run-tests');
   container.innerHTML = '';
 
-  if (!run.tests || run.tests.length === 0) {
-    container.innerHTML = `
-      <div class="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">
-        В прогоне нет кейсов
-      </div>
-    `;
-    return;
-  }
+  run.tests.forEach((test, index) => {
+    const cfg =
+      STATUS_CONFIG[test.status] ||
+      STATUS_CONFIG[STATUS.UNCHECKED];
 
- run.tests.map(normalizeTest).forEach((test, index) => {
     const row = document.createElement('div');
-
     row.className = `
-      rounded-xl border p-4
-      flex items-center justify-between gap-4
-      ${isArchived ? 'bg-gray-50 opacity-80' : 'bg-white'}
+      rounded-xl border p-4 flex items-center justify-between
+      ${cfg.rowClass}
+      ${archived ? 'opacity-80 bg-gray-50' : ''}
     `;
 
     row.innerHTML = `
-      <div class="flex-1">
-        <div class="font-medium text-black">
-          ${test.name}
-        </div>
-        <div class="text-sm text-gray-500">
-          ${test.description || ''}
-        </div>
+      <div>
+        <div class="font-medium">${test.name}</div>
+        <div class="text-sm text-gray-500">${test.description || ''}</div>
       </div>
 
       ${
-        isArchived
-          ? `<span class="text-sm text-gray-500">${statusLabel(test.status)}</span>`
-          : `
-            <select
-              class="rounded-md border px-2 py-1 text-sm"
-              onchange="updateRunTestStatus(${index}, this.value)"
-            >
-              <option value="unchecked" ${test.status === 'unchecked' ? 'selected' : ''}>⏳ Не проверен</option>
-              <option value="checked" ${test.status === 'checked' ? 'selected' : ''}>✔ Успешно</option>
-              <option value="error" ${test.status === 'error' ? 'selected' : ''}>✖ Ошибка</option>
-              <option value="retest" ${test.status === 'retest' ? 'selected' : ''}>🔁 Перепроверка</option>
-            </select>
-          `
+        archived
+          ? `<span class="text-sm text-gray-500">
+               ${cfg.label}
+             </span>`
+          : `<div class="flex gap-1">
+               ${renderStatusButtons(index, test.status)}
+             </div>`
       }
     `;
 
     container.appendChild(row);
   });
-
-  // кнопка завершения — только для активных
-const finishBtn = document.getElementById('finish-run-btn');
-if (finishBtn) {
-  finishBtn.classList.toggle(
-    'hidden',
-    currentRunMode === 'archived'
-  );
-}
 }
 
-function statusLabel(status) {
-  switch (status) {
-    case 'checked': return '✔ Успешно';
-    case 'error': return '✖ Ошибка';
-    case 'retest': return '🔁 Ретест';
-    default: return '⏳ Не проверен';
+
+function renderStatusButtons(index, current) {
+  return Object.values(STATUS).map(status => {
+    const active = status === current ? 'ring-2 ring-black' : '';
+    return `
+      <button
+        class="px-2 py-1 rounded text-xs border ${active}"
+        onclick="updateRunTestStatus(${index}, '${status}')"
+      >
+        ${STATUS_CONFIG[status].label}
+      </button>
+    `;
+  }).join('');
+}
+
+function updateRunTestStatus(testIndex, newStatus) {
+  const runs = getRuns() || [];
+  const run = runs.find(r => r.id === currentRunId);
+
+  if (!run || run.finishedAt) return; 
+
+  const test = run.tests[testIndex];
+  if (!test) return;
+
+  test.history.push({
+    from: test.status,
+    to: newStatus,
+    at: Date.now()
+  });
+
+  test.status = newStatus;
+
+  setRuns(runs);
+  renderRunDetail(run);
+}
+
+
+const STATUS = {
+  UNCHECKED: 'unchecked',
+  PASSED: 'passed',
+  FAILED: 'failed',
+  RETEST: 'retest'
+};
+
+const STATUS_CONFIG = {
+  [STATUS.UNCHECKED]: {
+    label: 'Не проверен',
+    rowClass: '',
+    badge: 'text-gray-500'
+  },
+  [STATUS.PASSED]: {
+    label: 'Проверен',
+    rowClass: 'border-green-500 bg-green-50',
+    badge: 'text-green-600'
+  },
+  [STATUS.FAILED]: {
+    label: 'Ошибка',
+    rowClass: 'border-red-500 bg-red-50',
+    badge: 'text-red-600'
+  },
+  [STATUS.RETEST]: {
+    label: 'Ретест',
+    rowClass: 'border-yellow-500 bg-yellow-50',
+    badge: 'text-yellow-600'
   }
-}
+};
 
+function normalizeAllRuns() {
+  const runs = getRuns() || [];
+
+  runs.forEach(run => {
+    run.tests.forEach(test => {
+      // старые статусы → новые
+      if (test.status === 'checked') test.status = STATUS.PASSED;
+      if (test.status === 'error') test.status = STATUS.FAILED;
+      if (!Object.values(STATUS).includes(test.status)) {
+        test.status = STATUS.UNCHECKED;
+      }
+
+      test.history ??= [];
+    });
+  });
+
+  setRuns(runs);
+}
 
 function finishCurrentRun() {
   const runs = getRuns() || [];
-  const archived = JSON.parse(localStorage.getItem('archivedRuns')) || [];
+  const archived = getArchivedRuns() || [];
 
   const index = runs.findIndex(r => r.id === currentRunId);
   if (index === -1) return;
 
   const run = runs.splice(index, 1)[0];
+
   run.finishedAt = Date.now();
 
   archived.push(run);
 
   setRuns(runs);
-  localStorage.setItem('archivedRuns', JSON.stringify(archived));
+  setArchivedRuns(archived);
+
+  currentRunId = null;
 
   loadRuns();
-  loadArchiveRuns(); // ← 🔥 КЛЮЧЕВО
+  loadArchiveRuns();
+  updateDashboardStats();
+
   showToast('Прогон завершён', 'info');
   showPage('runs');
 }
@@ -1350,127 +1434,128 @@ function normalizeTest(test) {
 function renderRunDetail(run) {
   const archived = isArchivedRun(run);
 
-  // name
-  const nameInput = document.getElementById('run-name-input');
-  nameInput.value = run.name || run.projectName;
-  nameInput.disabled = archived;
+document.getElementById('run-name').textContent =
+  run.name || run.projectName;
 
-  // project
   document.getElementById('run-project-name').textContent =
     run.projectName;
 
-  // buttons
+  const editBtn = document.getElementById('edit-run-btn');
+  editBtn.style.display = archived ? 'none' : 'inline-flex';
+  editBtn.onclick = () => openEditRunModal(run);
+
   document.getElementById('finish-run-btn').style.display =
     archived ? 'none' : 'inline-flex';
 
-  document.getElementById('edit-run-btn').style.display =
-    archived ? 'none' : 'inline-flex';
-
-  // tests
   renderRunTests(run, archived);
 }
 
-function renderRunTestsEditor() {
-  const runs = getRuns() || [];
-  const projects = JSON.parse(localStorage.getItem('projects')) || [];
 
-  const run = runs.find(r => r.id === currentRunId);
-  if (!run) return;
-
-  const project = projects.find(p => p.name === run.projectName);
-  if (!project) return;
-
-  const container = document.getElementById('run-tests-editor');
+function renderEditRunTests(run) {
+  const container = document.getElementById('edit-run-tests');
   container.innerHTML = '';
 
-  project.tests.forEach(test => {
-    const checked = run.tests.some(t => t.name === test.name);
+  const projects =
+    JSON.parse(localStorage.getItem('projects')) || [];
 
-    container.innerHTML += `
-      <label class="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          data-test-name="${test.name}"
-          ${checked ? 'checked' : ''}
-        />
+  const selectedIds = new Set(run.tests.map(t => t.id));
+
+  projects.forEach(project => {
+    const block = document.createElement('div');
+    block.innerHTML = `<h3 class="text-sm font-medium">${project.name}</h3>`;
+
+   project.tests.forEach(test => {
+  ensureTestId(test);
+      const checked = selectedIds.has(test.id);
+
+      const row = document.createElement('label');
+      row.className = 'flex items-center gap-2 text-sm';
+      row.innerHTML = `
+        <input type="checkbox" value="${test.id}" ${checked ? 'checked' : ''} />
         ${test.name}
-      </label>
-    `;
+      `;
+
+      block.appendChild(row);
+    });
+
+    container.appendChild(block);
   });
 }
 
-function saveRunTests() {
-  const runs = getRuns() || [];
-  const projects = JSON.parse(localStorage.getItem('projects')) || [];
 
-  const run = runs.find(r => r.id === currentRunId);
-  const project = projects.find(p => p.name === run.projectName);
-  if (!run || !project) return;
 
-  const selected = Array.from(
-    document.querySelectorAll('#run-tests-editor input:checked')
-  ).map(i => i.dataset.testName);
+function isArchivedRun(run) {
+  return Boolean(run.finishedAt);
+}
 
-  run.tests = project.tests
-    .filter(t => selected.includes(t.name))
-    .map(t => ({
-      ...t,
-      status: 'unchecked'
-    }));
+let editingRun = null;
+
+function openEditRunModal(run) {
+  editingRun = run;
+
+  document.getElementById('edit-run-name').value =
+    run.name || run.projectName;
+
+  renderEditRunTests(run);
+
+  document.getElementById('edit-run-modal').classList.remove('hidden');
+}
+
+function saveRunEdits() {
+  if (!editingRun) return;
+
+  const runs = getRuns();
+  const run = runs.find(r => r.id === editingRun.id);
+  if (!run || run.finishedAt) return;
+
+  // name
+  run.name = document.getElementById('edit-run-name').value.trim();
+
+  // selected tests
+  const checked = Array.from(
+    document.querySelectorAll('#edit-run-tests input:checked')
+  ).map(i => i.value);
+
+  const projects =
+    JSON.parse(localStorage.getItem('projects')) || [];
+
+  const existing = new Map(
+    run.tests.map(t => [t.id, t])
+  );
+
+  const newTests = [];
+
+projects.forEach(p => {
+  p.tests.forEach(t => {
+    ensureTestId(t);
+      if (checked.includes(t.id)) {
+        newTests.push(
+          existing.get(t.id) || {
+            ...t,
+            projectId: p.id,
+            status: STATUS.UNCHECKED,
+            history: []
+          }
+        );
+      }
+    });
+  });
+
+  run.tests = newTests;
 
   setRuns(runs);
-  loadRunDetail();
-  showToast('Кейсы обновлены', 'success');
+
+  closeEditRunModal();
+  renderRunDetail(run);
 }
 
-function renderRunTests(run, archived) {
-  const container = document.getElementById('run-tests');
-  container.innerHTML = '';
-
-  if (!run.tests.length) {
-    container.innerHTML = `
-      <div class="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">
-        Нет кейсов
-      </div>
-    `;
-    return;
-  }
-
-  run.tests.forEach((test, index) => {
-    const row = document.createElement('div');
-    row.className =
-      'rounded-xl border p-4 flex items-center justify-between';
-
-    row.innerHTML = `
-      <div>
-        <div class="font-medium">${test.name}</div>
-        <div class="text-sm text-gray-500">${test.description || ''}</div>
-      </div>
-
-      ${
-        archived
-          ? `<span class="text-sm text-gray-500">${statusLabel(test.status)}</span>`
-          : `
-            <select
-              class="rounded-md border px-2 py-1 text-sm"
-              onchange="updateRunTestStatus(${index}, this.value)"
-            >
-              <option value="unchecked" ${test.status === 'unchecked' ? 'selected' : ''}>⏳ Не проверен</option>
-              <option value="checked" ${test.status === 'checked' ? 'selected' : ''}>✔ Проверен</option>
-              <option value="error" ${test.status === 'error' ? 'selected' : ''}>✖ Ошибка</option>
-              <option value="retest" ${test.status === 'retest' ? 'selected' : ''}>🔁 Ретест</option>
-            </select>
-          `
-      }
-    `;
-
-    container.appendChild(row);
-  });
+function closeEditRunModal() {
+  editingRun = null;
+  document.getElementById('edit-run-modal').classList.add('hidden');
 }
 
 function loadArchiveRuns() {
-  const archivedRuns =
-    JSON.parse(localStorage.getItem('archivedRuns')) || [];
+  const archivedRuns = getArchivedRuns() || [];
 
   const list = document.getElementById('archive-list');
   const empty = document.getElementById('archive-empty');
@@ -1487,36 +1572,15 @@ function loadArchiveRuns() {
   empty.classList.add('hidden');
 
   archivedRuns.forEach(run => {
-    const tests = run.tests || [];
-    const total = tests.length;
-
-    const stats = {
-      checked: 0,
-      unchecked: 0,
-      error: 0,
-      retest: 0
-    };
-
-    tests.forEach(t => {
-      if (stats[t.status] !== undefined) {
-        stats[t.status]++;
-      }
-    });
-
-    const completed = total - stats.unchecked;
-    const percent = total === 0
-      ? 0
-      : Math.round((completed / total) * 100);
+    const stats = calculateRunStats(run);
 
     const date = run.finishedAt
       ? new Date(run.finishedAt).toLocaleDateString()
       : '—';
 
-   const card = document.createElement('div');
-card.classList.add('cursor-pointer');
-card.onclick = () => openRun(run.id);
+    const card = document.createElement('div');
     card.className =
-      'rounded-xl border bg-white p-4 space-y-4 opacity-90';
+      'rounded-xl border bg-white p-4 space-y-4 opacity-90 cursor-pointer';
 
     card.innerHTML = `
       <div class="flex items-center justify-between">
@@ -1530,33 +1594,34 @@ card.onclick = () => openRun(run.id);
         </div>
 
         <div class="text-sm text-gray-400">
-          ${percent}%
+          ${stats.percent}%
         </div>
       </div>
 
       <div class="h-2 w-full rounded bg-gray-100 overflow-hidden">
         <div
           class="h-full bg-black"
-          style="width: ${percent}%"
+          style="width: ${stats.percent}%"
         ></div>
       </div>
 
       <div class="flex flex-wrap gap-2 text-xs">
         <span class="rounded-md bg-green-100 px-2 py-1 text-green-700">
-          ${stats.checked} passed
+          Проверено: ${stats.passed}
         </span>
         <span class="rounded-md bg-red-100 px-2 py-1 text-red-700">
-          ${stats.error} errors
+          Ошибки: ${stats.failed}
         </span>
         <span class="rounded-md bg-yellow-100 px-2 py-1 text-yellow-700">
-          ${stats.retest} retest
+        Ретест: ${stats.retest}
         </span>
         <span class="rounded-md bg-gray-100 px-2 py-1 text-gray-600">
-          ${stats.unchecked} skipped
+          Не проверено: ${stats.unchecked}
         </span>
       </div>
     `;
 
+    card.onclick = () => openRun(run.id);
     list.appendChild(card);
   });
 }
@@ -1594,6 +1659,13 @@ document.addEventListener('DOMContentLoaded', () => {
     finishBtn.addEventListener('click', finishCurrentRun);
   }
 });
+
+function ensureTestId(test) {
+  if (!test.id) {
+    test.id = crypto.randomUUID();
+  }
+  return test;
+}
 
 function openSidebar() {
   sidebarOpen = true;
@@ -1832,38 +1904,43 @@ function renderLatestRuns(limit = 3) {
   const latestRuns = runs.slice(-limit).reverse();
 
   latestRuns.forEach(run => {
-    const total = run.tests.length;
+    const stats = calculateRunStats(run);
 
-    const stats = { checked: 0, unchecked: 0, error: 0, retest: 0 };
-    run.tests.forEach(t => stats[t.status]++);
-
-    const completed = total - stats.unchecked;
-    const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
-
-    // 🔹 card объявляется ЗДЕСЬ
     const card = document.createElement('div');
-    card.className = 'rounded-xl border bg-white p-4 hover:shadow transition cursor-pointer';
+    card.className =
+      'rounded-xl border bg-white p-4 hover:shadow transition cursor-pointer';
 
     card.innerHTML = `
-      <h3 class="font-medium truncate">${run.projectName}</h3>
-      <p class="text-sm text-gray-500">Тестов: ${total}</p>
+      <h3 class="font-medium truncate">
+        ${run.name || run.projectName}
+      </h3>
+
+      <p class="text-sm text-gray-500">
+        Тестов: ${stats.total}
+      </p>
 
       <div class="mt-3">
         <div class="h-2 w-full rounded bg-gray-100 overflow-hidden">
-          <div class="h-full bg-black" style="width:${percent}%"></div>
+          <div
+            class="h-full bg-black"
+            style="width:${stats.percent}%"
+          ></div>
         </div>
-        <div class="mt-1 text-xs text-gray-500">Выполнено ${percent}%</div>
+        <div class="mt-1 text-xs text-gray-500">
+          Выполнено ${stats.percent}%
+        </div>
       </div>
 
       <div class="mt-3 text-xs text-gray-400 space-y-1">
-        <div>Проверено: ${stats.checked}</div>
-        <div>Не проверено: ${stats.unchecked}</div>
-        <div class="text-red-500">Ошибки: ${stats.error}</div>
+        <div>Проверено: ${stats.passed}</div>
+     <div class="${stats.failed > 0 ? 'text-red-500' : 'text-gray-400'}">
+Ошибки: ${stats.failed}
+</div>
         <div>Ретест: ${stats.retest}</div>
+        <div>Не проверено: ${stats.unchecked}</div>
       </div>
     `;
 
-    // ✅ КЛИК — ТОЛЬКО ЗДЕСЬ
     card.onclick = () => {
       if (run.id) {
         localStorage.setItem('highlightRunId', run.id);
@@ -1874,6 +1951,7 @@ function renderLatestRuns(limit = 3) {
     container.appendChild(card);
   });
 }
+
 
 function showRunModalError(message) {
   const el = document.getElementById('run-modal-error');

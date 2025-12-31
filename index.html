@@ -306,11 +306,10 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <input
-        id="run-name-input"
-        class="text-2xl font-semibold tracking-tight border-none outline-none"
-        placeholder="Название прогона"
-      />
+      <h1
+  id="run-name"
+  class="text-2xl font-semibold tracking-tight"
+></h1>
       <p id="run-project-name" class="text-sm text-gray-500"></p>
     </div>
 
@@ -319,7 +318,7 @@
         id="edit-run-btn"
         class="rounded-md border px-3 py-1.5 text-sm"
       >
-        Редактировать кейсы
+        Редактировать
       </button>
 
       <button
@@ -336,7 +335,7 @@
 
   <button
     class="text-sm text-gray-500 hover:text-black"
-    onclick="showPage('runs')"
+    onclick="goBackFromRun()"
   >
     ← Назад
   </button>
@@ -394,6 +393,33 @@
 </div>
 </div>
 
+
+<div
+  id="edit-run-modal"
+  class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40"
+>
+  <div class="bg-white rounded-xl w-full max-w-xl p-6 space-y-4">
+
+    <h2 class="text-lg font-medium">Редактировать прогон</h2>
+
+    <!-- Name -->
+    <div>
+      <label class="text-sm text-gray-500">Название прогона</label>
+      <input
+        id="edit-run-name"
+        class="mt-1 w-full rounded-md border px-3 py-2"
+      />
+    </div>
+
+    <!-- Tests -->
+    <div class="max-h-64 overflow-y-auto space-y-4" id="edit-run-tests"></div>
+
+    <div class="flex justify-end gap-2 pt-4">
+      <button class="px-4 py-2 text-sm" onclick="closeEditRunModal()">Отмена</button>
+      <button class="px-4 py-2 bg-black text-white rounded-md" onclick="saveRunEdits()">Сохранить</button>
+    </div>
+  </div>
+</div>
 
     <div id="add-project-modal" class="modal">
         <div class="modal-content">
@@ -754,6 +780,7 @@
         placeholder="Regression / Smoke / Sprint"
         class="w-full rounded-md border px-3 py-2 text-sm"
       />
+      <p id="run-modal-error" class="mt-2 text-sm text-red-600 hidden"></p>
     </div>
 
     <div class="flex justify-end gap-2 pt-4">
