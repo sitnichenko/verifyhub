@@ -1198,8 +1198,8 @@ function openRun(runId) {
   }
 
   currentRunId = run.id;
-showPage('run-detail');
-renderRunDetail(run || archivedRun);
+  showPage('run-detail');
+ renderRunDetail(run || archivedRun);
 setActiveSidebar(run.finishedAt ? 'archive' : 'runs');
 }
 
@@ -1468,26 +1468,6 @@ function renderRunTests(run, archived) {
   });
 }
 
-function finishCurrentRun() {
-  const runs = getRuns();
-  const archived = getArchivedRuns();
-
-  const index = runs.findIndex(r => r.id === currentRunId);
-  if (index === -1) return;
-
-  const run = runs.splice(index, 1)[0];
-  run.finishedAt = Date.now();
-
-  archived.push(run);
-
-  setRuns(runs);
-  setArchivedRuns(archived);
-
-  showPage('runs');
-  loadRuns();
-  loadArchiveRuns();
-}
-
 function loadArchiveRuns() {
   const archivedRuns =
     JSON.parse(localStorage.getItem('archivedRuns')) || [];
@@ -1591,10 +1571,13 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     showPage(localStorage.getItem('currentPage') || 'dashboard');
   }
+  
 
     // Инициализация модальных окон для добавления и редактирования тестов
     document.getElementById('add-test-modal').style.display = 'none';
     document.getElementById('edit-test-modal').style.display = 'none';
+
+    
 });
 
 const toggleSidebarBtn = document.getElementById('toggle-sidebar');
@@ -1603,6 +1586,14 @@ const sidebar = document.getElementById('sidebar');
 const mainContainer = document.getElementById('main-container');
 
 let sidebarOpen = true;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const finishBtn = document.getElementById('finish-run-btn');
+
+  if (finishBtn) {
+    finishBtn.addEventListener('click', finishCurrentRun);
+  }
+});
 
 function openSidebar() {
   sidebarOpen = true;
